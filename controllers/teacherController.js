@@ -3,7 +3,47 @@ import { Teacher } from "../models/teacherModel.js";
 import bcrypt from "bcrypt";
 import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import { Admin } from "../models/adminModel.js";
-import { Student } from "../models/studentModel.js";
+import { Worker } from "../models/workerModel.js";
+
+// Create teacher
+
+export const createTeacher = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const regexEmail = new RegExp(email || "", "i");
+
+    const existingAdmin = await Admin.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingWorker = await Worker.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingTeacher = await Teacher.findOne({
+      email: { $regex: regexEmail },
+    });
+
+    if (existingAdmin || existingWorker || existingTeacher) {
+      return res.status(409).json({ key: "email-already-exist" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+    const teacher = new Teacher({ ...req.body, password: hashedPassword });
+    await teacher.populate("courses");
+    await teacher.save();
+
+    const teachersCount = await Teacher.countDocuments({ deleted: false });
+    const lastPage = Math.ceil(teachersCount / 10);
+
+    res
+      .status(201)
+      .json({ teacher: { ...teacher.toObject(), password: "" }, lastPage });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 // Get teachers
 
@@ -96,18 +136,24 @@ export const getTeachersForPagination = async (req, res) => {
 // Update teacher
 export const updateTeacher = async (req, res) => {
   const { id } = req.params;
+  const { email } = req.body;
   let updatedData = req.body;
 
   try {
-    const existingAdmin = await Admin.findOne({ email: updatedData.email });
-    const existingStudent = await Student.findOne({ email: updatedData.email });
-    const existingTeacher = await Teacher.findOne({ email: updatedData.email });
+    const regexEmail = new RegExp(email || "", "i");
 
-    if (
-      (existingTeacher && existingTeacher._id != id) ||
-      existingAdmin ||
-      existingStudent
-    ) {
+    const existingAdmin = await Admin.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingWorker = await Worker.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingTeacher = await Teacher.findOne({
+      email: { $regex: regexEmail },
+      _id: { $ne: id },
+    });
+
+    if (existingTeacher || existingAdmin || existingWorker) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
@@ -119,8 +165,6 @@ export const updateTeacher = async (req, res) => {
       delete updatedData.password;
     }
 
-    const teacher = await Teacher.findById(id);
-
     const updatedTeacher = await Teacher.findByIdAndUpdate(id, updatedData, {
       new: true,
       runValidators: true,
@@ -130,40 +174,7 @@ export const updateTeacher = async (req, res) => {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-
-    if (teacher.status && !updatedTeacher.status) {
-      const firstDayCurrWeek = new Date();
-      firstDayCurrWeek.setDate(
-        firstDayCurrWeek.getDate() -
-          (firstDayCurrWeek.getDay() > 0 ? firstDayCurrWeek.getDay() : 7) +
-          1
-      );
-
-      firstDayCurrWeek.setHours(0, 0, 0, 0);
-
-      const teacherCurrentLessonsCount = await Lesson.countDocuments({
-        teacher: teacher._id,
-        role: "current",
-        date: {
-          $gte: firstDayCurrWeek,
-        },
-      });
-
-      if (teacherCurrentLessonsCount > 0) {
-        await Teacher.findByIdAndUpdate(teacher._id, teacher);
-        return res.status(400).json({ key: "has-current-week-lessons" });
-      }
-
-      await Lesson.deleteMany({
-        role: "main",
-        teacher: teacher._id,
-      });
-    }
-
-    const updatedTeacherObj = updatedTeacher.toObject();
-    updatedTeacherObj.password = "";
-
-    res.status(200).json(updatedTeacherObj);
+    res.status(200).json({ ...updatedTeacher.toObject(), password: "" });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -172,47 +183,19 @@ export const updateTeacher = async (req, res) => {
 // Delete teacher
 export const deleteTeacher = async (req, res) => {
   const { id } = req.params;
-  const firstDayCurrWeek = new Date();
-  firstDayCurrWeek.setDate(
-    firstDayCurrWeek.getDate() -
-      (firstDayCurrWeek.getDay() > 0 ? firstDayCurrWeek.getDay() : 7) +
-      1
-  );
-
-  firstDayCurrWeek.setHours(0, 0, 0, 0);
 
   try {
-    const teacher = await Teacher.findById(id);
+    const deletedTeacher = await Teacher.findByIdAndUpdate(
+      id,
+      { deleted: true },
+      { new: true }
+    );
 
-    if (!teacher) {
+    if (!deletedTeacher) {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-    const teacherCurrentLessonsCount = await Lesson.countDocuments({
-      teacher: teacher._id,
-      role: "current",
-      date: {
-        $gte: firstDayCurrWeek,
-      },
-    });
-
-    if (teacherCurrentLessonsCount > 0) {
-      return res.status(400).json({ key: "has-current-week-lessons" });
-    }
-
-    const teacherLessonsCount = await Lesson.countDocuments({
-      teacher: id,
-      role: "current",
-    });
-    if (teacherLessonsCount > 0) {
-      await Teacher.findByIdAndUpdate(id, { deleted: true });
-    } else {
-      await Teacher.findByIdAndDelete(id);
-    }
-
-    await Lesson.deleteMany({ teacher: id, role: "main" });
-
-    res.status(200).json({ message: "Teacher successfully deleted" });
+    res.status(200).json({ ...deletedTeacher.toObject(), password: "" });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -227,7 +210,7 @@ export const updateTeacherPassword = async (req, res) => {
     const teacher = await Teacher.findById(id);
 
     if (!teacher) {
-      return res.status(404).json({ message: "Student not found." });
+      return res.status(404).json({ message: "Teacher not found." });
     }
 
     const isPasswordCorrect = await bcrypt.compare(
@@ -247,7 +230,7 @@ export const updateTeacherPassword = async (req, res) => {
       { new: true }
     );
 
-    res.status(200).json(updatedTeacher);
+    res.status(200).json({ ...updatedTeacher.toObject(), password: "" });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }

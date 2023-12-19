@@ -54,10 +54,10 @@ app.use(
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "15mb" }));
 app.use("/api/user/auth", authRoutes);
-app.use("/api/user/student", studentRoutes);
 app.use("/api/user/teacher", teacherRoutes);
 app.use("/api/user/admin", adminRoutes);
 app.use("/api/user/worker", workerRoutes);
+app.use("/api/student", studentRoutes);
 app.use("/api/course", courseRoutes);
 app.use("/api/lesson", lessonRoutes);
 app.use("/api/notification", notificationRoutes);

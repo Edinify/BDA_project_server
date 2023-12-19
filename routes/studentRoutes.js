@@ -3,22 +3,18 @@ import {
   deleteStudent,
   getStudents,
   updateStudent,
-  updateStudentPassword,
   getStudentsByCourseId,
   getStudentsForPagination,
   getActiveStudents,
+  createStudent,
 } from "../controllers/studentController.js";
 import { authMiddleware, checkAdminAndSuperAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
+router.post("/", createStudent);
 router.get("/", authMiddleware, getStudents);
-router.get(
-  "/pagination",
-  authMiddleware,
-  checkAdminAndSuperAdmin,
-  getStudentsForPagination
-);
+router.get("/pagination", getStudentsForPagination);
 router.get(
   "/by/course",
   authMiddleware,
@@ -26,8 +22,7 @@ router.get(
   getStudentsByCourseId
 );
 router.get("/active", authMiddleware, getActiveStudents);
-router.patch("/:id", authMiddleware, checkAdminAndSuperAdmin, updateStudent);
-router.delete("/:id", authMiddleware, checkAdminAndSuperAdmin, deleteStudent);
-router.patch("/me/password", authMiddleware, updateStudentPassword);
+router.patch("/:id", updateStudent);
+router.delete("/:id", deleteStudent);
 
 export default router;

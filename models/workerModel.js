@@ -32,10 +32,10 @@ const workerSchema = new Schema(
       type: String,
       required: true,
     },
-    profils: {
+    profiles: {
       type: [
         {
-          profil: {
+          profile: {
             type: String,
             required: true,
           },

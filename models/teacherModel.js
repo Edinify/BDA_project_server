@@ -19,11 +19,9 @@ const teacherSchema = new Schema(
     },
     fin: {
       type: String,
-      required: true,
     },
     seria: {
       type: String,
-      required: true,
     },
     courses: [
       {
@@ -31,11 +29,6 @@ const teacherSchema = new Schema(
         ref: "Course",
       },
     ],
-    salary: {
-      monthly: { type: Boolean, required: true },
-      hourly: { type: Boolean, required: true },
-      value: { type: Number, required: true },
-    },
     status: {
       type: Boolean,
       default: true,
@@ -46,32 +39,9 @@ const teacherSchema = new Schema(
     },
     phone: {
       type: String,
-      required: true,
-    },
-    workExperience: {
-      type: String,
-      required: true,
-    },
-    maritalStatus: {
-      type: String,
-      required: true,
-    },
-    healthStatus: {
-      type: String,
-      required: true,
-    },
-    disability: {
-      type: String,
-      required: true,
-    },
-    sector: {
-      az: Boolean,
-      en: Boolean,
-      ru: Boolean,
     },
     birthday: {
       type: Date,
-      required: true,
     },
     deleted: {
       type: Boolean,

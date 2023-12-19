@@ -5,6 +5,7 @@ import {
   checkTeacher,
 } from "../middleware/auth.js";
 import {
+  createTeacher,
   deleteTeacher,
   getActiveTeachers,
   getAllTeachers,
@@ -20,6 +21,7 @@ import {
 
 const router = express.Router();
 
+router.post("/", createTeacher);
 router.get("/all", authMiddleware, checkAdminAndSuperAdmin, getAllTeachers);
 router.get(
   "/active",
@@ -27,15 +29,10 @@ router.get(
   checkAdminAndSuperAdmin,
   getActiveTeachers
 );
-router.get(
-  "/pagination",
-  authMiddleware,
-  checkAdminAndSuperAdmin,
-  getTeachersForPagination
-);
-router.patch("/:id", authMiddleware, checkAdminAndSuperAdmin, updateTeacher);
-router.delete("/:id", authMiddleware, checkAdminAndSuperAdmin, deleteTeacher);
-router.patch("/me/password", authMiddleware, updateTeacherPassword);
+router.get("/pagination", getTeachersForPagination);
+router.patch("/:id", updateTeacher);
+router.delete("/:id", deleteTeacher);
+router.patch("/own/password", updateTeacherPassword);
 router.get("/me/chart", authMiddleware, checkTeacher, getTeacherChartData);
 router.get(
   "/me/confirmed-lessons",

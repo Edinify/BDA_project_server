@@ -12,11 +12,7 @@ import {
   createNotificationForUpdate,
   deleteNotificationForUpdateTable,
 } from "./notificationController.js";
-import {
-  decrementLessonAmount,
-  icrementAndDecrementLessonAmount,
-  incrementLessonAmount,
-} from "./studentController.js";
+
 
 // Create lesson
 export const createLesson = async (req, res) => {
@@ -382,48 +378,6 @@ export const updateLessonInMainPanel = async (req, res) => {
 
     updatedLesson.earnings = earnings;
     await updatedLesson.save();
-
-    // Lesson amount calculate for students
-    if (lesson.status === "confirmed" && updatedLesson.status !== "confirmed") {
-      const updatedStudents = await incrementLessonAmount(updatedLesson);
-
-      if (!updatedStudents) {
-        await Lesson.findByIdAndUpdate(lesson._id, lesson);
-        return res.status(400).json({
-          key: "create-error-occurred",
-          message: "error in increment lesson amount",
-        });
-      }
-    } else if (
-      lesson.status !== "confirmed" &&
-      updatedLesson.status === "confirmed"
-    ) {
-      const updatedStudents = await decrementLessonAmount(updatedLesson);
-
-      if (!updatedStudents) {
-        await Lesson.findByIdAndUpdate(lesson._id, lesson);
-        return res.status(400).json({
-          key: "create-error-occurred",
-          message: "error in decrementLessonAmount",
-        });
-      }
-    } else if (
-      lesson.status === "confirmed" &&
-      updatedLesson.status === "confirmed"
-    ) {
-      const updatedStudents = await icrementAndDecrementLessonAmount(
-        lesson,
-        updatedLesson
-      );
-
-      if (!updatedStudents) {
-        await Lesson.findByIdAndUpdate(lesson._id, lesson);
-        return res.status(400).json({
-          key: "create-error-occurred",
-          message: "error in icrement and decrement lessonAmount ",
-        });
-      }
-    }
 
     res.status(200).json(updatedLesson);
   } catch (err) {

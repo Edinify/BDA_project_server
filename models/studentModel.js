@@ -8,21 +8,6 @@ const studentSchema = new Schema(
       type: String,
       required: true,
     },
-    motherName: {
-      type: String,
-    },
-    fatherName: {
-      type: String,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
     fin: {
       type: String,
     },
@@ -32,42 +17,13 @@ const studentSchema = new Schema(
     birthday: {
       type: Date,
     },
-    motherPhone: {
+    phone: {
       type: String,
-    },
-    fatherPhone: {
-      type: String,
-    },
-    emergencyPhone: {
-      type: String,
-    },
-    role: {
-      type: String,
-      default: "student",
-    },
-    payment: {
-      type: Number,
-      required: true,
-    },
-    sector: {
-      az: Boolean,
-      en: Boolean,
-      ru: Boolean,
-    },
-    whereFrom: {
-      mainArea: String,
-      part: String,
     },
     courses: [
       {
-        course: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Course",
-        },
-        lessonAmount: {
-          type: Number,
-          required: true,
-        },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
       },
     ],
     whereComing: {
@@ -75,24 +31,59 @@ const studentSchema = new Schema(
       enum: ["instagram", "referral", "event", "externalAds", "other"],
       default: "other",
     },
-    status: {
-      type: Boolean,
-      default: true,
-    },
-    educationalInstitution: {
+    degree: {
       type: String,
     },
-    educationDegree: {
+    contractStartDate: {
+      type: Date,
+    },
+    contractEndDate: {
+      type: Date,
+    },
+    amount: {
+      type: Number,
+    },
+    totalAmount: {
+      type: Number,
+    },
+    discountReason: {
       type: String,
     },
-    healthStatus: {
+    dicount: {
+      type: Number,
+    },
+    paymentType: {
       type: String,
     },
+    groups: [
+      {
+        group: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Group",
+        },
+        payments: [
+          {
+            payment: {
+              type: Number,
+            },
+            paymentDate: {
+              type: Date,
+            },
+            paid: {
+              type: Boolean,
+            },
+          },
+        ],
+        status: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
     deleted: {
       type: Boolean,
       default: false,
     },
-    otp: Number,
   },
   { timestamps: true }
 );
