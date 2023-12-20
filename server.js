@@ -22,6 +22,7 @@ import financeRoutes from "./routes/financeRoutes.js";
 import fineRoutes from "./routes/fineRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import workerRoutes from "./routes/workerRoutes.js";
+import syllabusRoutes from "./routes/syllabusRoutes.js";
 // import updateButtonRoutes from "./routes/updateButtonRoutes.js";
 
 import {
@@ -34,6 +35,7 @@ import { getUnviewedLessons } from "./controllers/dashboardController.js";
 import cron from "node-cron";
 import logger from "./config/logger.js";
 import { Lesson } from "./models/lessonModel.js";
+import router from "./routes/syllabusRoutes.js";
 
 dotenv.config();
 
@@ -59,6 +61,7 @@ app.use("/api/user/admin", adminRoutes);
 app.use("/api/user/worker", workerRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/course", courseRoutes);
+app.use("/api/syllabus", syllabusRoutes);
 app.use("/api/lesson", lessonRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/salary", salaryRoutes);

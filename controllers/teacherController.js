@@ -8,7 +8,9 @@ import { Worker } from "../models/workerModel.js";
 // Create teacher
 
 export const createTeacher = async (req, res) => {
-  const { email } = req.body;
+  const { email, password } = req.body;
+
+  console.log(req.body);
 
   try {
     const regexEmail = new RegExp(email || "", "i");
@@ -27,13 +29,17 @@ export const createTeacher = async (req, res) => {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
+    console.log(1);
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
+    console.log(salt, password);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    console.log(2);
     const teacher = new Teacher({ ...req.body, password: hashedPassword });
     await teacher.populate("courses");
     await teacher.save();
-
+    console.log(3);
     const teachersCount = await Teacher.countDocuments({ deleted: false });
     const lastPage = Math.ceil(teachersCount / 10);
 
@@ -41,6 +47,7 @@ export const createTeacher = async (req, res) => {
       .status(201)
       .json({ teacher: { ...teacher.toObject(), password: "" }, lastPage });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -153,7 +160,9 @@ export const updateTeacher = async (req, res) => {
       _id: { $ne: id },
     });
 
-    if (existingTeacher || existingAdmin || existingWorker) {
+    console.log(existingTeacher);
+
+    if (email && (existingTeacher || existingAdmin || existingWorker)) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 

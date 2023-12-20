@@ -28,7 +28,7 @@ const studentSchema = new Schema(
     ],
     whereComing: {
       type: String,
-      enum: ["instagram", "referral", "event", "externalAds", "other"],
+      // enum: ["instagram", "referral", "event", "externalAds", "other"],
       default: "other",
     },
     degree: {
@@ -49,7 +49,7 @@ const studentSchema = new Schema(
     discountReason: {
       type: String,
     },
-    dicount: {
+    discount: {
       type: Number,
     },
     paymentType: {
