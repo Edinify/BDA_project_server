@@ -8,11 +8,11 @@ const consultationSchema = new Schema(
       type: Date,
       required: true,
     },
-    consDate: {
+    constDate: {
       type: Date,
       required: true,
     },
-    consTime: {
+    constTime: {
       type: String,
       required: true,
     },
@@ -25,8 +25,9 @@ const consultationSchema = new Schema(
       required: true,
     },
     course: {
-      type: Object,
+      type: Schema.Types.ObjectId,
       required: true,
+      ref: "Course",
     },
     teacher: {
       type: Schema.Types.ObjectId,
@@ -34,7 +35,6 @@ const consultationSchema = new Schema(
     },
     persona: {
       type: String,
-      required: true,
     },
     whereComing: {
       type: String,
@@ -43,14 +43,12 @@ const consultationSchema = new Schema(
     },
     knowledge: {
       type: String,
-      required: true,
     },
     cancelReason: {
       type: String,
     },
     addInfo: {
       type: String,
-      required: true,
     },
     status: {
       type: String,
