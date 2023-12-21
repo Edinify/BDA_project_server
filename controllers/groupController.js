@@ -73,7 +73,7 @@ export const createGroup = async (req, res) => {
       name: { $regex: regexName },
     });
 
-    if (name.trim && existingGroup) {
+    if (name && existingGroup) {
       return res.status(409).json({ key: "group-already-exists" });
     }
 
@@ -83,7 +83,7 @@ export const createGroup = async (req, res) => {
     const groupsCount = await Group.countDocuments();
     const lastPage = Math.ceil(groupsCount / 10);
 
-    res.status(201).json({ course: newGroup, lastPage });
+    res.status(201).json({ group: newGroup, lastPage });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -102,58 +102,39 @@ export const updateGroup = async (req, res) => {
       _id: { $ne: id },
     });
 
-    if (name.trim() && existingCourse) {
-      return res.status(409).json({ key: "course-already-exists" });
+    if (name && existingGroup) {
+      return res.status(409).json({ key: "group-already-exists" });
     }
 
-    const updatedCourse = await Course.findByIdAndUpdate(id, req.body, {
+    const updatedGroup = await Group.findByIdAndUpdate(id, req.body, {
       upsert: true,
       new: true,
       runValidators: true,
     });
 
-    if (!updatedCourse) {
-      return res.status(404).json({ message: "Course not found" });
+    if (!updatedGroup) {
+      return res.status(404).json({ message: "Group not found" });
     }
 
-    res.status(200).json(updatedCourse);
+    res.status(200).json(updatedGroup);
   } catch (err) {
-    logger.error({
-      method: "PATCH",
-      status: 500,
-      message: err.message,
-      for: "UPDATE COURSE",
-      user: req.user,
-      updatedData: req.body,
-      courseId: id,
-      functionName: updateCourse.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };
 
-// Delete course
-export const deleteCourse = async (req, res) => {
+// Delete group
+export const deleteGroup = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deletedCourse = await Course.findByIdAndDelete(id);
+    const deletedGroup = await Group.findByIdAndDelete(id);
 
-    if (!deletedCourse) {
-      return res.status(404).json({ message: "course not found" });
+    if (!deletedGroup) {
+      return res.status(404).json({ message: "group not found" });
     }
 
-    res.status(200).json(deletedCourse);
+    res.status(200).json(deletedGroup);
   } catch (err) {
-    logger.error({
-      method: "DELETE",
-      status: 500,
-      message: err.message,
-      for: "DELETE COURSE",
-      user: req.user,
-      courseId: id,
-      functionName: deleteCourse.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };

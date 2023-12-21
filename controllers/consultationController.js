@@ -6,7 +6,7 @@ export const getConsultationsForPagination = async (req, res) => {
   const { searchQuery, status } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
- 
+
   try {
     let totalPages;
     let consultations;
@@ -14,8 +14,10 @@ export const getConsultationsForPagination = async (req, res) => {
 
     if (status === "appointed") {
       filterObj.status = "appointed";
-    } else if ("completed") {
+    } else if (status === "completed") {
       filterObj.status = { $ne: "appointed" };
+    } else {
+      return res.status(400).json({ message: "no status query" });
     }
 
     if (searchQuery && searchQuery.trim() !== "") {
@@ -31,7 +33,8 @@ export const getConsultationsForPagination = async (req, res) => {
         studentName: { $regex: regexSearchQuery },
       })
         .skip((page - 1) * limit)
-        .limit(limit);
+        .limit(limit)
+        .populate("course teacher");
 
       totalPages = Math.ceil(consultationsCount / limit);
     } else {
@@ -39,7 +42,8 @@ export const getConsultationsForPagination = async (req, res) => {
       totalPages = Math.ceil(consultationsCount / limit);
       consultations = await Consultation.find(filterObj)
         .skip((page - 1) * limit)
-        .limit(limit);
+        .limit(limit)
+        .populate("course teacher");
     }
 
     res.status(200).json({ consultations, totalPages });
@@ -52,6 +56,7 @@ export const getConsultationsForPagination = async (req, res) => {
 export const createConsultation = async (req, res) => {
   try {
     const newConsultation = new Consultation(req.body);
+    newConsultation.populate("course teacher");
     await newConsultation.save();
 
     const consultationCount = await Consultation.countDocuments();
@@ -76,7 +81,7 @@ export const updateConsultation = async (req, res) => {
         new: true,
         runValidators: true,
       }
-    );
+    ).populate("course teacher");
 
     if (!updatedConsultation) {
       return res.status(404).json({ message: "Consultation not found" });
