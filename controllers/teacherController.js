@@ -72,9 +72,7 @@ export const getActiveTeachers = async (req, res) => {
     const teachers = await Teacher.find({
       deleted: false,
       status: true,
-    })
-      .select("-password")
-      .populate("courses");
+    }).select("-password");
 
     res.status(200).json(teachers);
   } catch (err) {

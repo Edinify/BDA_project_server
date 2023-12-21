@@ -14,6 +14,7 @@ const groupSchema = new Schema({
       ref: "Teacher",
     },
   ],
+  mentors: [],
   students: [
     {
       type: Schema.Types.ObjectId,
@@ -44,6 +45,10 @@ const groupSchema = new Schema({
       },
     },
   ],
+  completed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 export const Group = mongoose.model("Group", groupSchema);

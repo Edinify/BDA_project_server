@@ -23,12 +23,7 @@ const router = express.Router();
 
 router.post("/", createTeacher);
 router.get("/all", authMiddleware, checkAdminAndSuperAdmin, getAllTeachers);
-router.get(
-  "/active",
-  authMiddleware,
-  checkAdminAndSuperAdmin,
-  getActiveTeachers
-);
+router.get("/active", getActiveTeachers);
 router.get("/pagination", getTeachersForPagination);
 router.patch("/:id", updateTeacher);
 router.delete("/:id", deleteTeacher);
