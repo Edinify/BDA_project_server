@@ -4,16 +4,9 @@ const Schema = mongoose.Schema;
 
 const lessonSchema = new Schema(
   {
-    role: {
-      type: String,
-      required: true,
-      enum: ["main", "current"],
-    },
     date: {
       type: Date,
-      required: function () {
-        return this.role === "current";
-      },
+      required: true,
     },
     time: {
       type: String,
@@ -23,10 +16,17 @@ const lessonSchema = new Schema(
       type: Number,
       required: true,
     },
-    teacher: {
+    group: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
+      ref: "Group",
+    },
+    teacher: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
+    },
+    mentor: {
+      type: mongoose.Schema.Types.ObjectId,
     },
     students: {
       type: [
@@ -39,18 +39,6 @@ const lessonSchema = new Schema(
             type: Number,
             default: 0,
           },
-          ratingByStudent: {
-            type: Number,
-            default: 0,
-          },
-          feedback: {
-            type: String,
-            default: "",
-          },
-          payment: {
-            type: Number,
-            required: true,
-          },
         },
       ],
       required: true,
@@ -60,31 +48,16 @@ const lessonSchema = new Schema(
       ref: "Course",
       required: true,
     },
+    topic: {
+      type: Object,
+    },
     status: {
       type: String,
       enum: ["unviewed", "confirmed", "cancelled"],
       default: "unviewed",
     },
-    feedback: {
-      type: String,
-      default: "",
-    },
-    note: {
-      type: String,
-      default: "",
-    },
-    task: {
-      type: String,
-      default: "",
-    },
-    salary: {
-      monthly: { type: Boolean, required: true },
-      hourly: { type: Boolean, required: true },
-      value: { type: Number, required: true },
-    },
-    earnings: {
-      type: Number,
-      default: 0,
+    changes: {
+      type: Object,
     },
   },
   { timestamps: true }

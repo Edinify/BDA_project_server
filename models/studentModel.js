@@ -31,30 +31,6 @@ const studentSchema = new Schema(
       // enum: ["instagram", "referral", "event", "externalAds", "other"],
       default: "other",
     },
-    degree: {
-      type: String,
-    },
-    contractStartDate: {
-      type: Date,
-    },
-    contractEndDate: {
-      type: Date,
-    },
-    amount: {
-      type: Number,
-    },
-    totalAmount: {
-      type: Number,
-    },
-    discountReason: {
-      type: String,
-    },
-    discount: {
-      type: Number,
-    },
-    paymentType: {
-      type: String,
-    },
     groups: [
       {
         group: {
@@ -63,6 +39,9 @@ const studentSchema = new Schema(
         },
         payments: [
           {
+            paymentType: {
+              type: String,
+            },
             payment: {
               type: Number,
             },
@@ -78,11 +57,29 @@ const studentSchema = new Schema(
           type: Boolean,
           default: true,
         },
+        degree: {
+          type: String,
+        },
+        amount: {
+          type: Number,
+        },
+        totalAmount: {
+          type: Number,
+        },
+        discountReason: {
+          type: String,
+        },
+        discount: {
+          type: Number,
+        },
       },
     ],
     deleted: {
       type: Boolean,
       default: false,
+    },
+    changes: {
+      type: Object,
     },
   },
   { timestamps: true }

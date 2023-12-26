@@ -25,6 +25,8 @@ import workerRoutes from "./routes/workerRoutes.js";
 import syllabusRoutes from "./routes/syllabusRoutes.js";
 import consultationRoutes from "./routes/consultationRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
+import tutionFeeRoutes from "./routes/tutionFeeRoutes.js";
+import careerRoutes from "./routes/careerRoutes.js";
 // import updateButtonRoutes from "./routes/updateButtonRoutes.js";
 
 import {
@@ -66,6 +68,8 @@ app.use("/api/course", courseRoutes);
 app.use("/api/syllabus", syllabusRoutes);
 app.use("/api/consultation", consultationRoutes);
 app.use("/api/group", groupRoutes);
+app.use("/api/tution-fee", tutionFeeRoutes);
+app.use("/api/career", careerRoutes);
 app.use("/api/lesson", lessonRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/salary", salaryRoutes);

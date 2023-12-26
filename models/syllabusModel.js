@@ -17,6 +17,9 @@ const syllabusSchema = new Schema(
       type: Schema.Types.ObjectId,
       required: true,
     },
+    changes: {
+      type: Object,
+    },
   },
   { timestamps: true }
 );

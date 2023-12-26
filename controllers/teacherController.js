@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import { Admin } from "../models/adminModel.js";
 import { Worker } from "../models/workerModel.js";
+import { Group } from "../models/groupModel.js";
 
 // Create teacher
 
@@ -75,6 +76,42 @@ export const getActiveTeachers = async (req, res) => {
     }).select("-password");
 
     res.status(200).json(teachers);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Get checked teachers
+export const getCheckedTeachers = async (req, res) => {
+  const { lessonId } = req.query;
+  try {
+    const lesson = await Lesson.findById(lessonId).populate("group");
+    const targetYear = lesson.date.getFullYear();
+    const targetMonth = lesson.date.getMonth() + 1;
+    const targetDayOfMonth = lesson.date.getDate();
+
+    const teachers = await Teacher.find({
+      _id: { $in: lesson.group.teachers },
+    });
+
+    const result = teachers.map(async (teacher) => {
+      const checkLesson = await Lesson.findOne({
+        teacher: teacher._id,
+        day: lesson.day,
+        time: lesson.time,
+        $expr: {
+          $and: [
+            { $eq: [{ $year: "$date" }, targetYear] },
+            { $eq: [{ $month: "$date" }, targetMonth] },
+            { $eq: [{ $dayOfMonth: "$date" }, targetDayOfMonth] },
+          ],
+        },
+      });
+
+      return { ...teacher.toObject(), disabled: checkLesson ? true : false };
+    });
+
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }

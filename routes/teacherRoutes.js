@@ -9,6 +9,7 @@ import {
   deleteTeacher,
   getActiveTeachers,
   getAllTeachers,
+  getCheckedTeachers,
   getTeacherCancelledLessonsCount,
   getTeacherChartData,
   getTeacherConfirmedLessonsCount,
@@ -24,6 +25,7 @@ const router = express.Router();
 router.post("/", createTeacher);
 router.get("/all", authMiddleware, checkAdminAndSuperAdmin, getAllTeachers);
 router.get("/active", getActiveTeachers);
+router.get("/checked", getCheckedTeachers);
 router.get("/pagination", getTeachersForPagination);
 router.patch("/:id", updateTeacher);
 router.delete("/:id", deleteTeacher);

@@ -47,6 +47,9 @@ const teacherSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    changes: {
+      type: Object,
+    },
     otp: Number,
   },
   { timestamps: true }

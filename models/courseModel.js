@@ -9,6 +9,16 @@ const courseSchema = new Schema(
       require: true,
       unique: true,
     },
+    payments: [
+      {
+        paymentType: {
+          type: String,
+        },
+        payment: {
+          type: Number,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

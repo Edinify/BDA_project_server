@@ -37,7 +37,8 @@ export const getSyllabusForPagination = async (req, res) => {
         courseId,
       })
         .skip((page - 1) * limit)
-        .limit(limit);
+        .limit(limit)
+        .sort({ orderNumber: 1 });
 
       totalPages = Math.ceil(syllabusCount / limit);
     } else {
@@ -45,6 +46,7 @@ export const getSyllabusForPagination = async (req, res) => {
       totalPages = Math.ceil(syllabusCount / limit);
       syllabus = await Syllabus.find({ courseId })
         .skip((page - 1) * limit)
+        .sort({ orderNumber: 1 })
         .limit(limit);
     }
 
