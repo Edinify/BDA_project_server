@@ -45,7 +45,8 @@ export const getGroupsForPagination = async (req, res) => {
         ...filterObj,
       })
         .skip((page - 1) * limit)
-        .limit(limit);
+        .limit(limit)
+        .populate("teacher students course");
 
       totalPages = Math.ceil(groupsCount / limit);
     } else {
@@ -53,7 +54,8 @@ export const getGroupsForPagination = async (req, res) => {
       totalPages = Math.ceil(groupsCount / limit);
       groups = await Group.find(filterObj)
         .skip((page - 1) * limit)
-        .limit(limit);
+        .limit(limit)
+        .populate("teacher students course");
     }
 
     res.status(200).json({ groups, totalPages });
@@ -110,7 +112,7 @@ export const updateGroup = async (req, res) => {
       upsert: true,
       new: true,
       runValidators: true,
-    });
+    }).populate("teacher students course");
 
     if (!updatedGroup) {
       return res.status(404).json({ message: "Group not found" });
