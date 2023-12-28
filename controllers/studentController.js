@@ -211,7 +211,7 @@ export const updateStudent = async (req, res) => {
   try {
     const updatedStudent = await Student.findByIdAndUpdate(id, req.body, {
       new: true,
-    }).populate("courses");
+    }).populate("courses groups.group");
 
     if (!updatedStudent) {
       return res.status(404).json({ key: "student-not-found" });
