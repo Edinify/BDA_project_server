@@ -13,7 +13,7 @@ export const createStudent = async (req, res) => {
 
     res.status(201).json({ student: newStudent, lastPage });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -98,7 +98,7 @@ export const getStudentsForPagination = async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses");
+        .populate("courses groups");
 
       totalPages = Math.ceil(studentsCount / limit);
     } else {
@@ -110,7 +110,7 @@ export const getStudentsForPagination = async (req, res) => {
       students = await Student.find({ deleted: false, ...filterObj })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses");
+        .populate("courses groups");
     }
 
     res.status(200).json({ students, totalPages });
