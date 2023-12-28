@@ -12,7 +12,7 @@ const courseSchema = new Schema(
     payments: [
       {
         paymentType: {
-          type: String,
+          type: Number,
         },
         payment: {
           type: Number,
