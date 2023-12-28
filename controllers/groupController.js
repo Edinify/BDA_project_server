@@ -15,8 +15,7 @@ export const getGroups = async (req, res) => {
 
 // Get groups with course id
 export const getGroupsWithCourseId = async (req, res) => {
-  const { groupsCount, searchQuery } = req.query;
-  const { courseIds } = req.body;
+  const { groupsCount, searchQuery, courseIds } = req.query;
   const currentDate = new Date();
 
   try {
