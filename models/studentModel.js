@@ -72,6 +72,12 @@ const studentSchema = new Schema(
         discount: {
           type: Number,
         },
+        contractStartDate: {
+          type: Date,
+        },
+        contractEndDate: {
+          type: Date,
+        },
       },
     ],
     deleted: {
