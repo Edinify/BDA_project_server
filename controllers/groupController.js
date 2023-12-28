@@ -13,6 +13,39 @@ export const getGroups = async (req, res) => {
   }
 };
 
+// Get groups with course id
+export const getGroupsWithCourseId = async (req, res) => {
+  const { studentsCount, searchQuery, courseId } = req.query;
+  const currentDate = new Date();
+
+  try {
+    const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
+
+    const groups = await Group.find({
+      name: { $regex: regexSearchQuery },
+      course: courseId,
+      endDate: {
+        $gte: currentDate,
+      },
+    })
+      .skip(parseInt(studentsCount || 0))
+      .limit(parseInt(studentsCount || 0) + 30)
+      .populate("teachers students course");
+
+    const totalLength = await Group.countDocuments({
+      name: { $regex: regexSearchQuery },
+      course: courseId,
+      endDate: {
+        $gte: currentDate,
+      },
+    });
+
+    res.status(200).json({ groups, totalLength });
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
 // Get groups for pagination
 export const getGroupsForPagination = async (req, res) => {
   const { searchQuery, completed } = req.query;
