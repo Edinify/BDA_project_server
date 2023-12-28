@@ -37,11 +37,11 @@ const studentSchema = new Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Group",
         },
+        paymentType: {
+          type: String,
+        },
         payments: [
           {
-            paymentType: {
-              type: String,
-            },
             payment: {
               type: Number,
             },
