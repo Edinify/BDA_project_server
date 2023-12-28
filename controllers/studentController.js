@@ -98,7 +98,7 @@ export const getStudentsForPagination = async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses groups");
+        .populate("courses groups.group");
 
       totalPages = Math.ceil(studentsCount / limit);
     } else {
@@ -110,7 +110,7 @@ export const getStudentsForPagination = async (req, res) => {
       students = await Student.find({ deleted: false, ...filterObj })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses groups");
+        .populate("courses groups.group");
     }
 
     res.status(200).json({ students, totalPages });
