@@ -37,28 +37,14 @@ const studentSchema = new Schema(
           type: mongoose.Schema.Types.ObjectId,
           ref: "Group",
         },
+        contractStartDate: {
+          type: Date,
+        },
+        contractEndDate: {
+          type: Date,
+        },
         paymentType: {
-          type: String,
-        },
-        payments: [
-          {
-            payment: {
-              type: Number,
-            },
-            paymentDate: {
-              type: Date,
-            },
-            paid: {
-              type: Boolean,
-            },
-          },
-        ],
-        status: {
-          type: Boolean,
-          default: true,
-        },
-        degree: {
-          type: String,
+          type: Number,
         },
         amount: {
           type: Number,
@@ -72,11 +58,22 @@ const studentSchema = new Schema(
         discount: {
           type: Number,
         },
-        contractStartDate: {
-          type: Date,
+        payments: [
+          {
+            payment: {
+              type: Number,
+            },
+            paymentDate: {
+              type: Date,
+            },
+          },
+        ],
+        status: {
+          type: Boolean,
+          default: true,
         },
-        contractEndDate: {
-          type: Date,
+        degree: {
+          type: String,
         },
       },
     ],
