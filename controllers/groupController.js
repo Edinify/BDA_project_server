@@ -15,7 +15,8 @@ export const getGroups = async (req, res) => {
 
 // Get groups with course id
 export const getGroupsWithCourseId = async (req, res) => {
-  const { groupsCount, searchQuery, courseId } = req.query;
+  const { groupsCount, searchQuery } = req.query;
+  const { courseIds } = req.body;
   const currentDate = new Date();
 
   try {
@@ -23,7 +24,7 @@ export const getGroupsWithCourseId = async (req, res) => {
 
     const groups = await Group.find({
       name: { $regex: regexSearchQuery },
-      course: courseId,
+      course: { $in: courseIds },
       endDate: {
         $gte: currentDate,
       },
@@ -34,7 +35,7 @@ export const getGroupsWithCourseId = async (req, res) => {
 
     const totalLength = await Group.countDocuments({
       name: { $regex: regexSearchQuery },
-      course: courseId,
+      course: { $in: courseIds },
       endDate: {
         $gte: currentDate,
       },
