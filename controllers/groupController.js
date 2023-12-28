@@ -15,7 +15,7 @@ export const getGroups = async (req, res) => {
 
 // Get groups with course id
 export const getGroupsWithCourseId = async (req, res) => {
-  const { studentsCount, searchQuery, courseId } = req.query;
+  const { groupsCount, searchQuery, courseId } = req.query;
   const currentDate = new Date();
 
   try {
@@ -28,8 +28,8 @@ export const getGroupsWithCourseId = async (req, res) => {
         $gte: currentDate,
       },
     })
-      .skip(parseInt(studentsCount || 0))
-      .limit(parseInt(studentsCount || 0) + 30)
+      .skip(parseInt(groupsCount || 0))
+      .limit(parseInt(groupsCount || 0) + 30)
       .populate("teachers students course");
 
     const totalLength = await Group.countDocuments({
