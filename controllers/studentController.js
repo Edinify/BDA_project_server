@@ -98,7 +98,14 @@ export const getStudentsForPagination = async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses groups.group");
+        .populate("courses")
+        .populate({
+          path: "groups.group",
+          populate: {
+            path: "course",
+            model: "Course",
+          },
+        });
 
       totalPages = Math.ceil(studentsCount / limit);
     } else {
@@ -110,7 +117,14 @@ export const getStudentsForPagination = async (req, res) => {
       students = await Student.find({ deleted: false, ...filterObj })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses groups.group");
+        .populate("courses")
+        .populate({
+          path: "groups.group",
+          populate: {
+            path: "course",
+            model: "Course",
+          },
+        });
     }
 
     res.status(200).json({ students, totalPages });
@@ -211,7 +225,15 @@ export const updateStudent = async (req, res) => {
   try {
     const updatedStudent = await Student.findByIdAndUpdate(id, req.body, {
       new: true,
-    }).populate("courses groups.group");
+    })
+      .populate("courses")
+      .populate({
+        path: "groups.group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      });
 
     if (!updatedStudent) {
       return res.status(404).json({ key: "student-not-found" });
