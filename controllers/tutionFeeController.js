@@ -21,16 +21,22 @@ export const getTutionFees = async (req, res) => {
     const students = await Student.find()
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("groups.group");
+      .populate({
+        path: "groups.group",
+        populate: {
+          path: "course",
+          module: "Course",
+        },
+      });
 
     const tutionFees = students.reduce((list, student) => {
       const tutionFee = student.groups.map((item) => ({
         ...student.toObject(),
         groups: null,
-        ...item,
+        ...item.toObject(),
       }));
 
-      return [...list, tutionFee];
+      return [...list, ...tutionFee];
     }, []);
 
     res.status(200).json({ tutionFees, totalPages });
