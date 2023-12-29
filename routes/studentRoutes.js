@@ -21,7 +21,7 @@ router.get(
   checkAdminAndSuperAdmin,
   getStudentsByCourseId
 );
-router.get("/active", authMiddleware, getActiveStudents);
+router.get("/active", getActiveStudents);
 router.patch("/:id", updateStudent);
 router.delete("/:id", deleteStudent);
 
