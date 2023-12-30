@@ -66,6 +66,8 @@ export const createSyllabus = async (req, res) => {
       courseId,
     });
 
+    console.log(existingSyllabus, "existingSyllabus");
+
     if (existingSyllabus) {
       return res.status(409).json({ key: "syllabus-already-exists" });
     }
@@ -78,6 +80,7 @@ export const createSyllabus = async (req, res) => {
 
     res.status(201).json({ syllabus: newSyllabus, lastPage });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -1,12 +1,20 @@
 import { Lesson } from "../models/lessonModel.js";
 import { Student } from "../models/studentModel.js";
 import logger from "../config/logger.js";
+import { Group } from "../models/groupModel.js";
 
 // Create student
 export const createStudent = async (req, res) => {
   try {
     const newStudent = new Student(req.body);
     await newStudent.save();
+
+    const groupsIds = newStudent.groups.map((item) => item?.group);
+
+    await Group.updateMany(
+      { _id: { $in: groupsIds } },
+      { $push: { students: newStudent._id } }
+    );
 
     const studentsCount = await Student.countDocuments({ deleted: false });
     const lastPage = Math.ceil(studentsCount / 10);
@@ -234,6 +242,16 @@ export const updateStudent = async (req, res) => {
           model: "Course",
         },
       });
+
+    const groupsIds = updatedStudent.groups.map((item) => item?.group._id);
+
+    await Group.updateMany(
+      {
+        _id: { $in: groupsIds },
+        students: { $ne: updatedStudent._id },
+      },
+      { $push: { students: updatedStudent._id } }
+    );
 
     if (!updatedStudent) {
       return res.status(404).json({ key: "student-not-found" });

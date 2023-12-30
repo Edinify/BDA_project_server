@@ -10,7 +10,16 @@ export const createLesson = async (req, res) => {
       ...req.body,
     });
 
-    await newLesson.populate("teacher course students.student group");
+    await newLesson
+      .populate("teacher")
+      .populate({ path: "students.student", select: "-groups" })
+      .populate({
+        path: "group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      });
 
     await newLesson.save();
 
@@ -88,7 +97,15 @@ export const getLessons = async (req, res) => {
     const lessons = await Lesson.find(filterObj)
       .skip(skip)
       .limit(limit)
-      .populate("group course teacher students.student");
+      .populate("teacher")
+      .populate({ path: "students.student", select: "-groups" })
+      .populate({
+        path: "group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      });
 
     res.status(200).json({ lessons, totalPages });
   } catch (err) {
