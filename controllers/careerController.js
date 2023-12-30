@@ -22,16 +22,22 @@ export const getCareers = async (req, res) => {
     const students = await Student.find()
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("groups.group");
+      .populate({
+        path: "groups.group",
+        populate: {
+          path: "course",
+          module: "Course",
+        },
+      });
 
     const careers = students.reduce((list, student) => {
       const career = student.groups.map((item) => ({
         ...student.toObject(),
         groups: null,
-        ...item,
+        ...item.toObject(),
       }));
 
-      return [...list, career];
+      return [...list, ...career];
     }, []);
 
     res.status(200).json({ careers, totalPages });
