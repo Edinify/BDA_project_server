@@ -1,6 +1,7 @@
 import logger from "../config/logger.js";
 import { Course } from "../models/courseModel.js";
 import { Group } from "../models/groupModel.js";
+import { createLessons } from "./lessonController.js";
 
 // Get groups
 export const getGroups = async (req, res) => {
@@ -114,6 +115,8 @@ export const createGroup = async (req, res) => {
 
     const newGroup = new Group(req.body);
     await newGroup.save();
+
+    createLessons(newGroup);
 
     const groupsCount = await Group.countDocuments();
     const lastPage = Math.ceil(groupsCount / 10);

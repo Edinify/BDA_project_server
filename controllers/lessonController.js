@@ -2,7 +2,7 @@ import logger from "../config/logger.js";
 import { Lesson } from "../models/lessonModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import { calcDate } from "../calculate/calculateDate.js";
-
+import { Syllabus } from "../models/syllabusModel.js";
 // Create lesson
 export const createLesson = async (req, res) => {
   try {
@@ -31,8 +31,13 @@ export const createLesson = async (req, res) => {
 
 // Create lessons
 export const createLessons = async (group) => {
-  const { startDate, endDate, lessonDate, _id, course, students } = group;
+  const { startDate, endDate, lessonDate, _id, course, students, teachers } =
+    group;
   try {
+    const syllabus = await Syllabus.find({ courseId: course }).sort({
+      orderNumber: 1,
+    });
+    let syllabusIndex = 0;
     const lessons = [];
 
     while (startDate <= endDate) {
@@ -41,6 +46,9 @@ export const createLessons = async (group) => {
 
       if (checkDay) {
         const currentDate = new Date(startDate);
+        const studentsObj = students.map((student) => ({
+          student,
+        }));
 
         const newLesson = {
           group: _id,
@@ -48,10 +56,13 @@ export const createLessons = async (group) => {
           date: currentDate,
           day: checkDay.day,
           time: checkDay.time,
-          students: students,
+          students: studentsObj,
+          teacher: teachers[0],
+          topic: syllabus[syllabusIndex],
         };
 
         lessons.push(newLesson);
+        syllabusIndex++;
       }
 
       startDate.setDate(startDate.getDate() + 1);
