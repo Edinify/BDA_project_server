@@ -6,7 +6,7 @@ import { createLessons } from "./lessonController.js";
 // Get groups
 export const getGroups = async (req, res) => {
   try {
-    const groups = await Group.find();
+    const groups = await Group.find().populate('teachers');
 
     res.status(200).json(groups);
   } catch (err) {

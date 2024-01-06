@@ -15,6 +15,7 @@ import {
   getTeacherConfirmedLessonsCount,
   getTeacherLeadboardOrder,
   getTeacherUnviewedLessons,
+  getTeachersByCourseId,
   getTeachersForPagination,
   updateTeacher,
   updateTeacherPassword,
@@ -25,6 +26,7 @@ const router = express.Router();
 router.post("/", createTeacher);
 router.get("/all", authMiddleware, checkAdminAndSuperAdmin, getAllTeachers);
 router.get("/active", getActiveTeachers);
+router.get("/by-course", getTeachersByCourseId);
 router.get("/checked", getCheckedTeachers);
 router.get("/pagination", getTeachersForPagination);
 router.patch("/:id", updateTeacher);
