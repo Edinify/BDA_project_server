@@ -1,6 +1,7 @@
 import logger from "../config/logger.js";
 import { Course } from "../models/courseModel.js";
 import { Group } from "../models/groupModel.js";
+import { createLessons } from "./lessonController.js";
 
 // Get groups
 export const getGroups = async (req, res) => {
@@ -115,6 +116,8 @@ export const createGroup = async (req, res) => {
     const newGroup = new Group(req.body);
     await newGroup.save();
 
+    createLessons(newGroup);
+
     const groupsCount = await Group.countDocuments();
     const lastPage = Math.ceil(groupsCount / 10);
 
@@ -128,6 +131,8 @@ export const createGroup = async (req, res) => {
 export const updateGroup = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
+
+  console.log(req.body);
 
   try {
     const regexName = new RegExp(name || "", "i");
@@ -145,7 +150,7 @@ export const updateGroup = async (req, res) => {
       upsert: true,
       new: true,
       runValidators: true,
-    }).populate("teacher students course");
+    }).populate("teachers students course");
 
     if (!updatedGroup) {
       return res.status(404).json({ message: "Group not found" });
@@ -153,6 +158,7 @@ export const updateGroup = async (req, res) => {
 
     res.status(200).json(updatedGroup);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

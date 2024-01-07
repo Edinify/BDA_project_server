@@ -43,11 +43,6 @@ const lessonSchema = new Schema(
       ],
       required: true,
     },
-    course: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
     topic: {
       type: Object,
     },

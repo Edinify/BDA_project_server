@@ -6,7 +6,6 @@ const syllabusSchema = new Schema(
   {
     orderNumber: {
       type: Number,
-      unique: true,
       required: true,
     },
     name: {
