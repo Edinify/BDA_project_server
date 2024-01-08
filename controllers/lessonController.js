@@ -58,20 +58,36 @@ export const createLessons = async (group) => {
         const studentsObj = students.map((student) => ({
           student,
         }));
+        let newLesson;
 
-        const newLesson = {
-          group: _id,
-          course: course,
-          date: currentDate,
-          day: checkDay.day,
-          time: checkDay.time,
-          students: studentsObj,
-          teacher: teachers[0],
-          topic: syllabus[syllabusIndex],
-        };
+        if (checkDay?.practical) {
+          newLesson = {
+            group: _id,
+            course: course,
+            date: currentDate,
+            day: checkDay.day,
+            time: checkDay.time,
+            students: studentsObj,
+            teacher: teachers[0],
+            topic: {
+              name: "Praktika",
+            },
+          };
+        } else {
+          newLesson = {
+            group: _id,
+            course: course,
+            date: currentDate,
+            day: checkDay.day,
+            time: checkDay.time,
+            students: studentsObj,
+            teacher: teachers[0],
+            topic: syllabus[syllabusIndex],
+          };
+          syllabusIndex++;
+        }
 
         lessons.push(newLesson);
-        syllabusIndex++;
       }
 
       startDate.setDate(startDate.getDate() + 1);
@@ -80,7 +96,6 @@ export const createLessons = async (group) => {
     const result = await Lesson.insertMany(lessons);
 
     console.log(result);
-
     return true;
   } catch (err) {
     console.log(err.message);

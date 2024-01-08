@@ -13,7 +13,14 @@ export const createStudent = async (req, res) => {
 
     await Group.updateMany(
       { _id: { $in: groupsIds } },
-      { $push: { students: newStudent._id } }
+      { $addToSet: { students: newStudent._id } }
+    );
+
+    await Lesson.updateMany(
+      {
+        group: { $in: groupsIds },
+      },
+      { $push: { students: { student: newStudent._id } } }
     );
 
     const studentsCount = await Student.countDocuments({ deleted: false });
@@ -243,22 +250,46 @@ export const updateStudent = async (req, res) => {
         },
       });
 
+    if (!updatedStudent) {
+      return res.status(404).json({ key: "student-not-found" });
+    }
+
     const groupsIds = updatedStudent.groups.map((item) => item?.group._id);
 
     await Group.updateMany(
       {
         _id: { $in: groupsIds },
-        students: { $ne: updatedStudent._id },
       },
-      { $push: { students: updatedStudent._id } }
+      { $addToSet: { students: updatedStudent._id } }
     );
 
-    if (!updatedStudent) {
-      return res.status(404).json({ key: "student-not-found" });
-    }
+    await Group.updateMany(
+      {
+        _id: { $nin: groupsIds },
+        students: { $in: updatedStudent._id },
+      },
+      { $pull: { students: updatedStudent._id } }
+    );
+
+    await Lesson.updateMany(
+      {
+        group: { $in: groupsIds },
+        "students.student": { $ne: updatedStudent._id },
+      },
+      { $push: { students: { student: updatedStudent._id } } }
+    );
+
+    await Lesson.updateMany(
+      {
+        group: { $nin: groupsIds },
+        "students.student": { $in: updatedStudent._id },
+      },
+      { $pull: { students: { student: updatedStudent._id } } }
+    );
 
     res.status(200).json(updatedStudent);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
