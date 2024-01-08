@@ -377,12 +377,12 @@ export const getUser = async (req, res) => {
   console.log(id, role)
   try {
     let user;
-    if (role === "admin" || role === "super-admin") {
+    if (role === "super-admin") {
       user = await Admin.findById(id);
     } else if (role === "teacher") {
       user = await Teacher.findById(id);
-    } else if (role === "student") {
-      user = await Student.findById(id).populate("courses.course");
+    } else if (role === "worker") {
+      user = await Worker.findById(id);
     }
 
     if (!user) {

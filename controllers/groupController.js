@@ -230,6 +230,10 @@ export const deleteGroup = async (req, res) => {
       return res.status(404).json({ message: "group not found" });
     }
 
+    await Lesson.deleteMany({
+      group: deletedGroup._id,
+    });
+
     await Student.updateMany(
       { _id: { $in: deletedGroup.students } },
       { $pull: { groups: { group: deletedGroup._id } } }
