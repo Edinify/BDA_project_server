@@ -374,7 +374,7 @@ const revokeTokenFromDatabase = async (refreshToken) => {
 // Get user
 export const getUser = async (req, res) => {
   const { id, role } = req.user;
-
+  console.log(id, role)
   try {
     let user;
     if (role === "admin" || role === "super-admin") {
