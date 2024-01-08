@@ -17,6 +17,10 @@ const workerSchema = new Schema(
       type: String,
       require: true,
     },
+    fin: {
+      type: String,
+      required: true,
+    },
     phone: {
       type: String,
       required: true,

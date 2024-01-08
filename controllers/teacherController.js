@@ -81,6 +81,25 @@ export const getActiveTeachers = async (req, res) => {
   }
 };
 
+// Get active teachers by course id
+export const getTeachersByCourseId = async (req, res) => {
+  const { courseId } = req.query;
+  console.log(req.query, "course id");
+  try {
+    const teachers = await Teacher.find({
+      deleted: false,
+      status: true,
+      courses: { $in: courseId },
+    })
+      .select("-password")
+      .populate("courses");
+
+    res.status(200).json(teachers);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
 // Get checked teachers
 export const getCheckedTeachers = async (req, res) => {
   const { lessonId } = req.query;

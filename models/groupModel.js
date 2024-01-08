@@ -35,6 +35,10 @@ const groupSchema = new Schema({
   },
   lessonDate: [
     {
+      practical: {
+        type: Boolean,
+        default: false,
+      },
       day: {
         type: Number,
         required: true,

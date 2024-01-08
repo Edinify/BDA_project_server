@@ -3,28 +3,37 @@ import { Lesson } from "../models/lessonModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import { calcDate } from "../calculate/calculateDate.js";
 import { Syllabus } from "../models/syllabusModel.js";
+
 // Create lesson
 export const createLesson = async (req, res) => {
+  const { date } = req.body;
+  const day = new Date(date).getDay();
+
+  console.log(date);
+  console.log(day);
   try {
     const newLesson = new Lesson({
       ...req.body,
+      day: day == 0 ? 7 : day,
     });
 
-    await newLesson
-      .populate("teacher")
-      .populate({ path: "students.student", select: "-groups" })
-      .populate({
-        path: "group",
-        populate: {
-          path: "course",
-          model: "Course",
-        },
-      });
+    // await newLesson
+    //   .populate("teacher")
+    //   .populate({ path: "students.student", select: "-groups" })
+    //   .populate({
+    //     path: "group",
+    //     populate: {
+    //       path: "course",
+    //       model: "Course",
+    //     },
+    //   });
 
     await newLesson.save();
 
+    console.log(newLesson);
     res.status(201).json(newLesson);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -49,20 +58,36 @@ export const createLessons = async (group) => {
         const studentsObj = students.map((student) => ({
           student,
         }));
+        let newLesson;
 
-        const newLesson = {
-          group: _id,
-          course: course,
-          date: currentDate,
-          day: checkDay.day,
-          time: checkDay.time,
-          students: studentsObj,
-          teacher: teachers[0],
-          topic: syllabus[syllabusIndex],
-        };
+        if (checkDay?.practical) {
+          newLesson = {
+            group: _id,
+            course: course,
+            date: currentDate,
+            day: checkDay.day,
+            time: checkDay.time,
+            students: studentsObj,
+            teacher: teachers[0],
+            topic: {
+              name: "Praktika",
+            },
+          };
+        } else {
+          newLesson = {
+            group: _id,
+            course: course,
+            date: currentDate,
+            day: checkDay.day,
+            time: checkDay.time,
+            students: studentsObj,
+            teacher: teachers[0],
+            topic: syllabus[syllabusIndex],
+          };
+          syllabusIndex++;
+        }
 
         lessons.push(newLesson);
-        syllabusIndex++;
       }
 
       startDate.setDate(startDate.getDate() + 1);
@@ -71,7 +96,6 @@ export const createLessons = async (group) => {
     const result = await Lesson.insertMany(lessons);
 
     console.log(result);
-
     return true;
   } catch (err) {
     console.log(err.message);
@@ -108,6 +132,7 @@ export const getLessons = async (req, res) => {
     const lessons = await Lesson.find(filterObj)
       .skip(skip)
       .limit(limit)
+      .sort({ date: 1 })
       .populate("teacher")
       .populate({ path: "students.student", select: "-groups" })
       .populate({
@@ -202,11 +227,23 @@ export const getLessons = async (req, res) => {
 // Update lesson
 export const updateLesson = async (req, res) => {
   const { id } = req.params;
+  const { date } = req.body;
+
+  console.log("update");
+  console.log(req.body);
+  console.log(id);
 
   try {
-    const updatedLesson = await Lesson.findByIdAndUpdate(id, req.body, {
+    const updateData = req.body;
+
+    if (date) {
+      const day = new Date(date).getDay();
+      updateData.day = day == 0 ? 7 : day;
+    }
+
+    const updatedLesson = await Lesson.findByIdAndUpdate(id, updateData, {
       new: true,
-    }).populate("teacher course students.student group");
+    }).populate("teacher students.student group");
 
     if (!updatedLesson) {
       return res.status(404).json({ message: "Lesson not found" });
@@ -214,6 +251,7 @@ export const updateLesson = async (req, res) => {
 
     res.status(200).json(updatedLesson);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
