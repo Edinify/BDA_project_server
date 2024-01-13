@@ -40,14 +40,32 @@ export const createLesson = async (req, res) => {
 
 // Create lessons
 export const createLessons = async (group) => {
-  const { startDate, endDate, lessonDate, _id, course, students, teachers } =
-    group;
+  const {
+    startDate,
+    endDate,
+    lessonDate,
+    _id,
+    course,
+    students,
+    teachers,
+    mentors,
+  } = group;
+
+  console.log(startDate, endDate, lessonDate);
   try {
+    const checkLessons = await Lesson.findOne({ group: _id });
     const syllabus = await Syllabus.find({ courseId: course }).sort({
       orderNumber: 1,
     });
     let syllabusIndex = 0;
     const lessons = [];
+
+    console.log(checkLessons);
+
+    if (!startDate || !endDate || lessonDate.length == 0 || checkLessons)
+      return;
+
+    console.log("salam");
 
     while (startDate <= endDate) {
       const currentDay = startDate.getDay();
@@ -69,6 +87,7 @@ export const createLessons = async (group) => {
             time: checkDay.time,
             students: studentsObj,
             teacher: teachers[0],
+            mentor: mentors[0],
             topic: {
               name: "Praktika",
             },
@@ -82,6 +101,7 @@ export const createLessons = async (group) => {
             time: checkDay.time,
             students: studentsObj,
             teacher: teachers[0],
+            mentor: mentors[0],
             topic: syllabus[syllabusIndex],
           };
           syllabusIndex++;
@@ -118,10 +138,10 @@ export const getLessons = async (req, res) => {
 
     const filterObj = {
       group: groupId,
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
+      // date: {
+      //   $gte: targetDate.startDate,
+      //   $lte: targetDate.endDate,
+      // },
     };
 
     const lessonsCount = await Lesson.countDocuments(filterObj);
@@ -133,7 +153,7 @@ export const getLessons = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .sort({ date: 1 })
-      .populate("teacher")
+      .populate("teacher mentor")
       .populate({ path: "students.student", select: "-groups" })
       .populate({
         path: "group",
@@ -243,7 +263,7 @@ export const updateLesson = async (req, res) => {
 
     const updatedLesson = await Lesson.findByIdAndUpdate(id, updateData, {
       new: true,
-    }).populate("teacher students.student group");
+    }).populate("teacher students.student group mentor");
 
     if (!updatedLesson) {
       return res.status(404).json({ message: "Lesson not found" });

@@ -36,6 +36,7 @@ const teacherSchema = new Schema(
     role: {
       type: String,
       default: "teacher",
+      enum: ["teacher", "mentor"],
     },
     phone: {
       type: String,

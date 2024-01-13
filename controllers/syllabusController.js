@@ -88,7 +88,9 @@ export const createSyllabus = async (req, res) => {
 // Update syllabus
 export const updateSyllabus = async (req, res) => {
   const { id } = req.params;
+  const { id: userId } = req.user;
   const { orderNumber, courseId } = req.body;
+  const updatedData = req.body;
 
   try {
     const existingSyllabus = await Syllabus.findOne({
@@ -101,7 +103,19 @@ export const updateSyllabus = async (req, res) => {
       return res.status(409).json({ key: "syllabus-already-exists" });
     }
 
-    const updatedSyllabus = await Syllabus.findByIdAndUpdate(id, req.body, {
+    if (role === "worker") {
+      const worker = await Worker.findById(userId);
+      const power = worker.profiles.find(
+        (item) => item.profile === "teachers"
+      )?.power;
+
+      if (power === "update") {
+        const teacher = await Teacher.findById(id);
+        updatedData.history = teacher.toObject();
+      }
+    }
+
+    const updatedSyllabus = await Syllabus.findByIdAndUpdate(id, updatedData, {
       upsert: true,
       new: true,
       runValidators: true,

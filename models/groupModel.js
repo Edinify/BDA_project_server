@@ -14,7 +14,12 @@ const groupSchema = new Schema({
       ref: "Teacher",
     },
   ],
-  mentors: [],
+  mentors: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Teacher",
+    },
+  ],
   students: [
     {
       type: Schema.Types.ObjectId,
@@ -24,14 +29,13 @@ const groupSchema = new Schema({
   course: {
     type: Schema.Types.ObjectId,
     ref: "Course",
+    required: true,
   },
   startDate: {
     type: Date,
-    required: true,
   },
   endDate: {
     type: Date,
-    required: true,
   },
   lessonDate: [
     {
@@ -53,7 +57,7 @@ const groupSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  changes: {
+  history: {
     type: Object,
   },
 });

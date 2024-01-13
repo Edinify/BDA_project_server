@@ -22,6 +22,9 @@ const courseSchema = new Schema(
         },
       },
     ],
+    history: {
+      type: Object,
+    },
   },
   { timestamps: true }
 );

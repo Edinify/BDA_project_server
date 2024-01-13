@@ -19,6 +19,9 @@ const syllabusSchema = new Schema(
     changes: {
       type: Object,
     },
+    history: {
+      type: Object,
+    },
   },
   { timestamps: true }
 );

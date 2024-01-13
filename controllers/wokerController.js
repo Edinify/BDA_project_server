@@ -183,3 +183,46 @@ export const updateWorkerOwnPassword = async (req, res) => {
     res.status(500).json({ message: { error: err.message } });
   }
 };
+
+// Confirm changes
+
+export const confirmChanges = async (req, res) => {
+  const { id } = req.params;
+  const { profile } = req.query;
+
+  try {
+    let targetData;
+
+    if (profile === "teacher") {
+      targetData = await Teacher.findById(id);
+    }
+
+    targetData.history = {};
+    await targetData.save();
+
+    res.status(200).json();
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const cancelChanges = async (req, res) => {
+  const { id } = req.params;
+  const { profile } = req.query;
+  const { history } = req.body;
+
+  try {
+    let targetData;
+
+    if (profile === "teacher") {
+      targetData = await Teacher.findByIdAndUpdate(id, {
+        ...history,
+        history: {},
+      });
+    }
+
+    res.status(200).json();
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};

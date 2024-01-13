@@ -63,6 +63,7 @@ export const login = async (req, res) => {
 
     const user = admin || worker || teacher;
 
+    console.log(user, "user in login");
     if (!user) {
       return res.status(404).json({ key: "user-not-found" });
     }
@@ -70,6 +71,7 @@ export const login = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+      console.log("errrrroorro");
       return res.status(404).json({ key: "invalid-password" });
     }
 
@@ -112,10 +114,10 @@ export const sendCodeToEmail = async (req, res) => {
 
   try {
     const admin = await Admin.findOne({ email });
-    const student = await Student.findOne({ email });
+    const worker = await Worker.findOne({ email });
     const teacher = await Teacher.findOne({ email });
 
-    const user = admin || student || teacher;
+    const user = admin || worker || teacher;
 
     if (!user) {
       return res.status(404).json({ key: "user-not-found" });
@@ -157,7 +159,7 @@ export const sendCodeToEmail = async (req, res) => {
     } else if (user.role === "teacher") {
       await Teacher.findByIdAndUpdate(user._id, { otp: randomCode });
     } else {
-      await Student.findByIdAndUpdate(user._id, { otp: randomCode });
+      await Worker.findByIdAndUpdate(user._id, { otp: randomCode });
     }
 
     setTimeout(async () => {
@@ -166,7 +168,7 @@ export const sendCodeToEmail = async (req, res) => {
       } else if (user.role === "teacher") {
         await Teacher.findByIdAndUpdate(user._id, { otp: 0 });
       } else {
-        await Student.findByIdAndUpdate(user._id, { otp: 0 });
+        await Worker.findByIdAndUpdate(user._id, { otp: 0 });
       }
     }, 120000);
   } catch (err) {
