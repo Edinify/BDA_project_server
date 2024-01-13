@@ -5,6 +5,8 @@ import {
   checkTeacher,
 } from "../middleware/auth.js";
 import {
+  cancelTeacherChanges,
+  confirmTeacherChanges,
   createTeacher,
   deleteTeacher,
   getActiveTeachers,
@@ -20,6 +22,10 @@ import {
   updateTeacher,
   updateTeacherPassword,
 } from "../controllers/teacherController.js";
+import {
+  cancelChanges,
+  confirmChanges,
+} from "../controllers/wokerController.js";
 
 const router = express.Router();
 
@@ -29,7 +35,7 @@ router.get("/active", getActiveTeachers);
 router.get("/by-course", getTeachersByCourseId);
 router.get("/checked", getCheckedTeachers);
 router.get("/pagination", getTeachersForPagination);
-router.patch("/:id", updateTeacher);
+router.patch("/:id", authMiddleware, updateTeacher);
 router.delete("/:id", deleteTeacher);
 router.patch("/own/password", updateTeacherPassword);
 router.get("/me/chart", authMiddleware, checkTeacher, getTeacherChartData);
@@ -57,5 +63,7 @@ router.get(
   checkTeacher,
   getTeacherLeadboardOrder
 );
+router.patch("/changes/confirm/:id", authMiddleware, confirmTeacherChanges);
+router.patch("/changes/cancel/:id", authMiddleware, cancelTeacherChanges);
 
 export default router;

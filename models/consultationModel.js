@@ -55,7 +55,7 @@ const consultationSchema = new Schema(
       enum: ["appointed", "sold", "cancelled", "thinks"],
       default: "appointed",
     },
-    changes: {
+    history: {
       type: Object,
     },
   },

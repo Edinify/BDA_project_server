@@ -5,6 +5,7 @@ import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import { Admin } from "../models/adminModel.js";
 import { Worker } from "../models/workerModel.js";
 import { Group } from "../models/groupModel.js";
+import { Course } from "../models/courseModel.js";
 
 // Create teacher
 
@@ -83,13 +84,14 @@ export const getActiveTeachers = async (req, res) => {
 
 // Get active teachers by course id
 export const getTeachersByCourseId = async (req, res) => {
-  const { courseId } = req.query;
-  console.log(req.query, "course id");
+  const { courseId, role } = req.query;
+
   try {
     const teachers = await Teacher.find({
       deleted: false,
       status: true,
       courses: { $in: courseId },
+      role,
     })
       .select("-password")
       .populate("courses");
@@ -138,14 +140,17 @@ export const getCheckedTeachers = async (req, res) => {
 
 // Get teacher for pagination
 export const getTeachersForPagination = async (req, res) => {
-  const { searchQuery, status } = req.query;
+  const { searchQuery, status, role } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
+  console.log(req.query);
   try {
     let totalPages;
     let teachers;
-    let filterObj = {};
+    let filterObj = {
+      role,
+    };
 
     if (status === "active") filterObj.status = true;
 
@@ -197,8 +202,11 @@ export const getTeachersForPagination = async (req, res) => {
 // Update teacher
 export const updateTeacher = async (req, res) => {
   const { id } = req.params;
+  const { id: userId, role } = req.user;
   const { email } = req.body;
   let updatedData = req.body;
+
+  console.log(req.user, "user");
 
   try {
     const regexEmail = new RegExp(email || "", "i");
@@ -226,6 +234,25 @@ export const updateTeacher = async (req, res) => {
       updatedData = { ...updatedData, password: hashedPassword };
     } else {
       delete updatedData.password;
+    }
+
+    if (role === "worker") {
+      const worker = await Worker.findById(userId);
+
+      const power = worker.profiles.find(
+        (item) => item.profile === "teachers"
+      )?.power;
+
+      if (power === "update") {
+        const courses = await Course.find({
+          _id: { $in: updatedData?.courses || [] },
+        });
+
+        delete updatedData.changes;
+        updatedData.courses = courses;
+
+        updatedData = { changes: updatedData };
+      }
     }
 
     const updatedTeacher = await Teacher.findByIdAndUpdate(id, updatedData, {
@@ -499,6 +526,46 @@ export const getTeacherLeadboardOrder = async (req, res) => {
       teacherCount: teachersResultsList.length,
     });
   } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Confirm teacher changes
+export const confirmTeacherChanges = async (req, res) => {
+  const { id } = req.params;
+  const { changes } = req.body;
+
+  try {
+    const teacher = await Teacher.findByIdAndUpdate(
+      id,
+      { ...changes, changes: {} },
+      { new: true }
+    ).populate("courses");
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    res.status(200).json({ ...teacher.toObject(), password: "" });
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Cancel teacher changes
+export const cancelTeacherChanges = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const teacher = await Teacher.findByIdAndUpdate(
+      id,
+      { changes: {} },
+      { new: true }
+    ).populate("courses");
+
+    res.status(200).json({ ...teacher.toObject(), password: "" });
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

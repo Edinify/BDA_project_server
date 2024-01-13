@@ -6,7 +6,7 @@ import { Lesson } from "../models/lessonModel.js";
 // Get groups
 export const getGroups = async (req, res) => {
   try {
-    const groups = await Group.find().populate("teachers");
+    const groups = await Group.find().populate("teachers mentors");
 
     res.status(200).json(groups);
   } catch (err) {
@@ -80,7 +80,7 @@ export const getGroupsForPagination = async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("teachers students course");
+        .populate("teachers students course mentors");
 
       totalPages = Math.ceil(groupsCount / limit);
     } else {
@@ -89,7 +89,7 @@ export const getGroupsForPagination = async (req, res) => {
       groups = await Group.find(filterObj)
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("teachers students course");
+        .populate("teachers students course mentors");
     }
 
     res.status(200).json({ groups, totalPages });
@@ -128,6 +128,7 @@ export const createGroup = async (req, res) => {
 
     res.status(201).json({ group: newGroup, lastPage });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -136,8 +137,6 @@ export const createGroup = async (req, res) => {
 export const updateGroup = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
-
-  console.log(req.body);
 
   try {
     const regexName = new RegExp(name || "", "i");
@@ -157,7 +156,7 @@ export const updateGroup = async (req, res) => {
       upsert: true,
       new: true,
       runValidators: true,
-    }).populate("teachers students course");
+    }).populate("teachers students course mentors");
 
     if (!updatedGroup) {
       return res.status(404).json({ message: "Group not found" });
@@ -181,10 +180,6 @@ export const updateGroup = async (req, res) => {
       { $pull: { groups: { group: updatedGroup._id } } }
     );
 
-    console.log(oldGroup.students, "old");
-    console.log(studentsIds, "new");
-    console.log(oldGroup.students[0] == studentsIds[0], "test");
-
     const addedStudentsIds = studentsIds.reduce(
       (students, id) =>
         !oldGroup.students.find((item) => item.toString() == id.toString())
@@ -201,7 +196,26 @@ export const updateGroup = async (req, res) => {
       []
     );
 
-    console.log(removedStudentsIds, "ererer");
+    if (updatedGroup.teachers.length > 0) {
+      await Lesson.updateMany(
+        {
+          group: updatedGroup._id,
+          teacher: { $exists: false },
+        },
+        { teacher: updatedGroup.teachers[0]._id }
+      );
+    }
+
+    if (updatedGroup.mentors.length > 0) {
+      await Lesson.updateMany(
+        {
+          group: updatedGroup._id,
+          mentor: { $exists: false },
+        },
+        { mentor: updatedGroup.mentors[0]._id }
+      );
+    }
+
     await Lesson.updateMany(
       { group: updatedGroup._id },
       { $push: { students: { $each: addedStudentsIds } } }
@@ -211,6 +225,10 @@ export const updateGroup = async (req, res) => {
       { group: updatedGroup._id },
       { $pull: { students: { student: { $in: removedStudentsIds } } } }
     );
+
+    const newGroup = await Group.findById(updatedGroup._id);
+
+    createLessons(newGroup);
 
     res.status(200).json(updatedGroup);
   } catch (err) {

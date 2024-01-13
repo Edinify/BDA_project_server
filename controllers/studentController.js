@@ -2,6 +2,9 @@ import { Lesson } from "../models/lessonModel.js";
 import { Student } from "../models/studentModel.js";
 import logger from "../config/logger.js";
 import { Group } from "../models/groupModel.js";
+import { Course } from "../models/courseModel.js";
+import { Worker } from "../models/workerModel.js";
+import { Teacher } from "../models/teacherModel.js";
 
 // Create student
 export const createStudent = async (req, res) => {
@@ -236,8 +239,47 @@ export const getStudentsByCourseId = async (req, res) => {
 // Update student
 export const updateStudent = async (req, res) => {
   const { id } = req.params;
+  const { id: userId, role } = req.user;
+  let updatedData = req.body;
 
   try {
+    if (role === "worker") {
+      const worker = await Worker.findById(userId);
+
+      const power = worker.profiles.find(
+        (item) => item.profile === "students"
+      )?.power;
+
+      if (power === "update") {
+        delete updatedData.changes;
+
+        const payload = new Student(updatedData);
+        await payload.populate("courses groups.group");
+
+        console.log(payload, "ttttt");
+
+        updatedData = { changes: payload.toObject() };
+
+        const updatedStudent = await Student.findByIdAndUpdate(
+          id,
+          updatedData,
+          {
+            new: true,
+          }
+        )
+          .populate("courses")
+          .populate({
+            path: "groups.group",
+            populate: {
+              path: "course",
+              model: "Course",
+            },
+          });
+
+        return res.status(200).json(updatedStudent);
+      }
+    }
+
     const updatedStudent = await Student.findByIdAndUpdate(id, req.body, {
       new: true,
     })
@@ -309,6 +351,98 @@ export const deleteStudent = async (req, res) => {
 
     res.status(200).json(deletedStudent);
   } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Confirm student changes
+export const confirmStudentChanges = async (req, res) => {
+  const { id } = req.params;
+  const { changes } = req.body;
+
+  try {
+    const updatedStudent = await Student.findByIdAndUpdate(
+      id,
+      { ...changes, changes: {} },
+      {
+        new: true,
+      }
+    )
+      .populate("courses")
+      .populate({
+        path: "groups.group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      });
+
+    if (!updatedStudent) {
+      return res.status(404).json({ key: "student-not-found" });
+    }
+
+    const groupsIds = updatedStudent.groups.map((item) => item?.group._id);
+
+    await Group.updateMany(
+      {
+        _id: { $in: groupsIds },
+      },
+      { $addToSet: { students: updatedStudent._id } }
+    );
+
+    await Group.updateMany(
+      {
+        _id: { $nin: groupsIds },
+        students: { $in: updatedStudent._id },
+      },
+      { $pull: { students: updatedStudent._id } }
+    );
+
+    await Lesson.updateMany(
+      {
+        group: { $in: groupsIds },
+        "students.student": { $ne: updatedStudent._id },
+      },
+      { $push: { students: { student: updatedStudent._id } } }
+    );
+
+    await Lesson.updateMany(
+      {
+        group: { $nin: groupsIds },
+        "students.student": { $in: updatedStudent._id },
+      },
+      { $pull: { students: { student: updatedStudent._id } } }
+    );
+
+    res.status(200).json({ ...updatedStudent.toObject(), password: "" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Cancel teacher changes
+export const cancelStudentChanges = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const teacher = await Teacher.findByIdAndUpdate(
+      id,
+      { changes: {} },
+      { new: true }
+    )
+      .populate("courses")
+      .populate({
+        path: "groups.group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      });
+
+    res.status(200).json({ ...teacher.toObject(), password: "" });
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

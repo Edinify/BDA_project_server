@@ -5,6 +5,8 @@ import {
   checkTeacher,
 } from "../middleware/auth.js";
 import {
+  cancelChanges,
+  confirmChanges,
   createWorker,
   deleteWorker,
   getWorkers,
@@ -18,6 +20,8 @@ router.post("/create", createWorker);
 router.get("/", getWorkers);
 router.patch("/:id", updateWorker);
 router.delete("/:id", deleteWorker);
-router.patch("/own/password", authMiddleware,updateWorkerOwnPassword);
+router.patch("/own/password", authMiddleware, updateWorkerOwnPassword);
+router.patch("/changes/confirm", authMiddleware, confirmChanges);
+router.patch("/changes/cancel", authMiddleware, cancelChanges);
 
 export default router;

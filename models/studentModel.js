@@ -43,8 +43,8 @@ const studentSchema = new Schema(
         contractEndDate: {
           type: Date,
         },
-        paymentType: {
-          type: Number,
+        payment: {
+          type: Object,
         },
         amount: {
           type: Number,
@@ -65,6 +65,11 @@ const studentSchema = new Schema(
             },
             paymentDate: {
               type: Date,
+            },
+            status: {
+              type: String,
+              default: "wait",
+              enum: ["wait", "paid", "confirm", "cancel"],
             },
           },
         ],

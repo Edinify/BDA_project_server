@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/all", getSyllabus);
 router.get("/pagination", getSyllabusForPagination);
 router.post("/", createSyllabus);
-router.patch("/:id", updateSyllabus);
+router.patch("/:id", authMiddleware, updateSyllabus);
 router.delete("/:id", deleteSyllabus);
 
 export default router;

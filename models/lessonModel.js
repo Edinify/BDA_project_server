@@ -27,6 +27,7 @@ const lessonSchema = new Schema(
     },
     mentor: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
     },
     students: {
       type: [
@@ -51,7 +52,7 @@ const lessonSchema = new Schema(
       enum: ["unviewed", "confirmed", "cancelled"],
       default: "unviewed",
     },
-    changes: {
+    history: {
       type: Object,
     },
   },
