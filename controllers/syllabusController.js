@@ -1,6 +1,7 @@
 import logger from "../config/logger.js";
 import { Course } from "../models/courseModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
+import { Worker } from "../models/workerModel.js";
 
 // Get syllabus
 export const getSyllabus = async (req, res) => {
@@ -88,9 +89,9 @@ export const createSyllabus = async (req, res) => {
 // Update syllabus
 export const updateSyllabus = async (req, res) => {
   const { id } = req.params;
-  const { id: userId } = req.user;
+  const { id: userId, role } = req.user;
   const { orderNumber, courseId } = req.body;
-  const updatedData = req.body;
+  let updatedData = req.body;
 
   try {
     const existingSyllabus = await Syllabus.findOne({
@@ -105,13 +106,15 @@ export const updateSyllabus = async (req, res) => {
 
     if (role === "worker") {
       const worker = await Worker.findById(userId);
+
       const power = worker.profiles.find(
-        (item) => item.profile === "teachers"
+        (item) => item.profile === "syllabus"
       )?.power;
 
       if (power === "update") {
-        const teacher = await Teacher.findById(id);
-        updatedData.history = teacher.toObject();
+        delete updatedData.changes;
+
+        updatedData = { changes: updatedData };
       }
     }
 
@@ -127,6 +130,7 @@ export const updateSyllabus = async (req, res) => {
 
     res.status(200).json(updatedSyllabus);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -144,6 +148,46 @@ export const deleteSyllabus = async (req, res) => {
 
     res.status(200).json(deletedSyllabus);
   } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Confirm syllabus changes
+export const confirmSyllabusChanges = async (req, res) => {
+  const { id } = req.params;
+  const { changes } = req.body;
+
+  try {
+    const syllabus = await Syllabus.findByIdAndUpdate(
+      id,
+      { ...changes, changes: {} },
+      { new: true }
+    );
+
+    if (!syllabus) {
+      return res.status(404).json({ message: "Syllabus not found" });
+    }
+
+    res.status(200).json(syllabus);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Cancel course changes
+export const cancelSyllabusChanges = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const syllabus = await Syllabus.findByIdAndUpdate(
+      id,
+      { changes: {} },
+      { new: true }
+    );
+
+    res.status(200).json(syllabus);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

@@ -22,7 +22,7 @@ const courseSchema = new Schema(
         },
       },
     ],
-    history: {
+    changes: {
       type: Object,
     },
   },

@@ -414,7 +414,7 @@ export const confirmStudentChanges = async (req, res) => {
       { $pull: { students: { student: updatedStudent._id } } }
     );
 
-    res.status(200).json({ ...updatedStudent.toObject(), password: "" });
+    res.status(200).json(updatedStudent);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
@@ -426,7 +426,7 @@ export const cancelStudentChanges = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const teacher = await Teacher.findByIdAndUpdate(
+    const student = await Student.findByIdAndUpdate(
       id,
       { changes: {} },
       { new: true }
@@ -440,7 +440,7 @@ export const cancelStudentChanges = async (req, res) => {
         },
       });
 
-    res.status(200).json({ ...teacher.toObject(), password: "" });
+    res.status(200).json(student);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

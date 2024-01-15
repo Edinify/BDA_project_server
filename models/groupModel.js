@@ -57,7 +57,7 @@ const groupSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  history: {
+  changes: {
     type: Object,
   },
 });

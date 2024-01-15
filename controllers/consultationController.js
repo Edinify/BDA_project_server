@@ -1,5 +1,6 @@
 import { Consultation } from "../models/consultationModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
+import { Worker } from "../models/workerModel.js";
 
 // Get consultations for pagination
 export const getConsultationsForPagination = async (req, res) => {
@@ -71,11 +72,30 @@ export const createConsultation = async (req, res) => {
 // Update consultation
 export const updateConsultation = async (req, res) => {
   const { id } = req.params;
+  const { id: userId, role } = req.user;
+  let updatedData = req.body;
 
   try {
+    if (role === "worker") {
+      const worker = await Worker.findById(userId);
+
+      const power = worker.profiles.find(
+        (item) => item.profile === "consultation"
+      )?.power;
+
+      if (power === "update") {
+        delete updatedData.changes;
+
+        const payload = new Consultation(updatedData);
+        await payload.populate("course teacher");
+
+        updatedData = { changes: payload.toObject() };
+      }
+    }
+
     const updatedConsultation = await Consultation.findByIdAndUpdate(
       id,
-      req.body,
+      updatedData,
       {
         upsert: true,
         new: true,
@@ -106,6 +126,46 @@ export const deleteConsultation = async (req, res) => {
 
     res.status(200).json(deletedConsultation);
   } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Confirm consultation changes
+export const confirmConsultationChanges = async (req, res) => {
+  const { id } = req.params;
+  const { changes } = req.body;
+
+  try {
+    const consultation = await Consultation.findByIdAndUpdate(
+      id,
+      { ...changes, changes: {} },
+      { new: true }
+    ).populate("course teacher");
+
+    if (!consultation) {
+      return res.status(404).json({ message: "Counsultation not found" });
+    }
+
+    res.status(200).json(consultation);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Cancel consultation changes
+export const cancelConsultationChanges = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const consultation = await Consultation.findByIdAndUpdate(
+      id,
+      { changes: {} },
+      { new: true }
+    ).populate("course teacher");
+
+    res.status(200).json(consultation);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
