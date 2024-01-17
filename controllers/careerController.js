@@ -8,6 +8,8 @@ export const getCareers = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
+  console.log(req.query, "kkkkkkkkkk", page);
+
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
     let targetDate;
@@ -41,6 +43,7 @@ export const getCareers = async (req, res) => {
         ...student.toObject(),
         groups: null,
         ...item.toObject(),
+        studentId: student._id,
         _id: uuidv4(),
       }));
 
@@ -49,6 +52,40 @@ export const getCareers = async (req, res) => {
 
     res.status(200).json({ careers, totalPages });
   } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const updateCareer = async (req, res) => {
+  const { studentId, group, portfolioLink, cvLink } = req.body;
+
+  console.log(req.body);
+
+  try {
+    const student = await Student.findById(studentId);
+
+    if (!student?.groups || student.groups.length === 0) {
+      return res.status(200).json();
+    }
+
+    const targetStudentGroup = student.groups.find(
+      (item) => item.group.toString() === group._id.toString()
+    );
+
+    if (!targetStudentGroup) {
+      return res.status(200).json();
+    }
+
+    targetStudentGroup.portfolioLink = portfolioLink;
+    targetStudentGroup.cvLink = cvLink;
+
+    await student.save();
+
+    console.log(student);
+
+    res.status(200).json();
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
