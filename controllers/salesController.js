@@ -1,7 +1,9 @@
 import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import logger from "../config/logger.js";
+import { Consultation } from "../models/consultationModel.js";
 import { Expense } from "../models/expenseModel.js";
 import { Income } from "../models/incomeModel.js";
+import { Lead } from "../models/leadModal.js";
 import { Lesson } from "../models/lessonModel.js";
 
 export const getFinance = async (req, res) => {
@@ -16,8 +18,8 @@ export const getFinance = async (req, res) => {
       targetDate = calcDateWithMonthly(startDate, endDate);
     }
 
-    console.log(startDate, endDate);
-    console.log(targetDate, "--------");
+    // console.log(startDate, endDate);
+    // console.log(targetDate, "--------");
 
     const incomes = await Income.find({
       date: {
@@ -86,6 +88,7 @@ export const getFinance = async (req, res) => {
 export const getChartData = async (req, res) => {
   const { monthCount, startDate, endDate } = req.query;
 
+  console.log(req.query);
   try {
     let targetDate;
 
@@ -95,102 +98,359 @@ export const getChartData = async (req, res) => {
       targetDate = calcDateWithMonthly(startDate, endDate);
     }
 
-    const incomes = await Income.find({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
-
-    const expenses = await Expense.find({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
-
-    const confirmedLessons = await Lesson.find({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-      role: "current",
-      status: "confirmed",
-    });
-
-    const months = [];
-    const chartIncome = [];
-    const chartExpense = [];
-    const chartTurnover = [];
-    const chartProfit = [];
-
-    while (targetDate.startDate <= targetDate.endDate) {
-      const targetYear = targetDate.startDate.getFullYear();
-      const targetMonth = targetDate.startDate.getMonth();
-
-      const filteredIncomes = incomes.filter(
-        (income) =>
-          income.date?.getMonth() === targetMonth &&
-          income.date?.getFullYear() === targetYear
-      );
-
-      const filteredExpenses = expenses.filter(
-        (expense) =>
-          expense.date?.getMonth() === targetMonth &&
-          expense.date?.getFullYear() === targetYear
-      );
-
-      const filteredLessons = confirmedLessons.filter(
-        (lesson) =>
-          lesson.date?.getMonth() === targetMonth &&
-          lesson.date?.getFullYear() === targetYear
-      );
-
-      const totalIncome = filteredIncomes.reduce(
-        (total, income) => (total += income.amount),
-        0
-      );
-
-      const totalExpense = filteredExpenses.reduce(
-        (total, expense) => (total += expense.amount),
-        0
-      );
-
-      const totalEarnings = filteredLessons.reduce(
-        (total, lesson) => total + lesson.earnings,
-        0
-      );
-
-      const turnover = totalEarnings;
-
-      const profit = turnover - totalExpense;
-
-      const monthName = new Intl.DateTimeFormat("en-US", {
-        month: "long",
-      }).format(targetDate.startDate);
-
-      months.push({ month: monthName, year: targetYear });
-      chartIncome.push(totalIncome.toFixed(2));
-      chartExpense.push(totalExpense.toFixed(2));
-      chartTurnover.push(turnover.toFixed(2));
-      chartProfit.push(profit.toFixed(2));
-
-      targetDate.startDate.setMonth(targetDate.startDate.getMonth() + 1);
+    if (monthCount == 1 || (startDate && startDate === endDate)) {
+      getChartDataOneMonth(targetDate);
+    } else {
+      getChartDataManyMonth(targetDate);
     }
 
-    res
-      .status(200)
-      .json({ months, chartIncome, chartExpense, chartTurnover, chartProfit });
+    res.status(200).json({});
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      query: req.query,
-      for: "GET CHART DATA",
-      user: req.user,
-      functionName: getChartData.name,
-    });
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
+
+async function getChartDataOneMonth(targetDate) {
+  const result = {
+    series: [
+      {
+        name: "Lead",
+        data: [],
+      },
+      {
+        name: "Planlanan",
+        data: [],
+      },
+      {
+        name: "Konsultasiya",
+        data: [],
+      },
+      {
+        name: "Satış",
+        data: [],
+      },
+    ],
+
+    categories: [],
+  };
+
+  const plansCountList = await Consultation.aggregate([
+    {
+      $match: {
+        contactDate: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%d", date: "$contactDate" } },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  const consultationsCountList = await Consultation.aggregate([
+    {
+      $match: {
+        constDate: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+        status: { $ne: "appointed" },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%d", date: "$constDate" },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  const salesCountList = await Consultation.aggregate([
+    {
+      $match: {
+        constDate: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+        status: "sold",
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%d", date: "$constDate" },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  const leadCountList = await Lead.aggregate([
+    {
+      $match: {
+        date: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%d", date: "$date" } },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: 1 },
+    },
+  ]);
+
+  const currentDate = new Date(targetDate.startDate);
+
+  while (currentDate < targetDate.endDate) {
+    const currentDay = currentDate.getDate();
+
+    const currLeadCount = leadCountList.find((item) => item._id == currentDay);
+    const currPlanCount = plansCountList.find((item) => item._id == currentDay);
+    const currConsultationCount = consultationsCountList.find(
+      (item) => item._id == currentDay
+    );
+    const currSaleCount = salesCountList.find((item) => item._id == currentDay);
+
+    if (currLeadCount) {
+      result.series[0].data.push(currLeadCount.total);
+    } else {
+      result.series[0].data.push(0);
+    }
+
+    if (currPlanCount) {
+      result.series[1].data.push(currPlanCount.total);
+    } else {
+      result.series[1].data.push(0);
+    }
+
+    if (currConsultationCount) {
+      result.series[2].data.push(currConsultationCount.total);
+    } else {
+      result.series[2].data.push(0);
+    }
+
+    if (currSaleCount) {
+      result.series[3].data.push(currSaleCount.total);
+    } else {
+      result.series[3].data.push(0);
+    }
+
+    result.categories.push(currentDay);
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return result;
+}
+
+async function getChartDataManyMonth(targetDate) {
+  console.log("salam");
+  const result = {
+    series: [
+      {
+        name: "Lead",
+        data: [],
+      },
+      {
+        name: "Planlanan",
+        data: [],
+      },
+      {
+        name: "Konsultasiya",
+        data: [],
+      },
+      {
+        name: "Satış",
+        data: [],
+      },
+    ],
+
+    categories: [],
+  };
+
+  const months = [
+    "Yan",
+    "Fev",
+    "Mar",
+    "Apr",
+    "May",
+    "Iyn",
+    "Iyn",
+    "Avq",
+    "Sen",
+    "Okt",
+    "Noy",
+    "Dek",
+  ];
+  const plansCountList = await Consultation.aggregate([
+    {
+      $match: {
+        contactDate: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$contactDate" },
+          month: { $month: "$contactDate" },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+  ]);
+
+  const consultationsCountList = await Consultation.aggregate([
+    {
+      $match: {
+        constDate: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+        status: { $ne: "appointed" },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$contactDate" },
+          month: { $month: "$contactDate" },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+  ]);
+
+  const salesCountList = await Consultation.aggregate([
+    {
+      $match: {
+        constDate: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+        status: "sold",
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$contactDate" },
+          month: { $month: "$contactDate" },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+  ]);
+
+  const leadCountList = await Lead.aggregate([
+    {
+      $match: {
+        date: {
+          $gte: targetDate.startDate,
+          $lte: targetDate.endDate,
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$contactDate" },
+          month: { $month: "$contactDate" },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { "_id.year": 1, "_id.month": 1 },
+    },
+  ]);
+
+  const currentDate = new Date(targetDate.startDate);
+
+  while (currentDate < targetDate.endDate) {
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    const currLeadCount = leadCountList.find(
+      (item) => item._id.year == currentYear && item._id.month == currentMonth
+    );
+    const currPlanCount = plansCountList.find(
+      (item) => item._id.year == currentYear && item._id.month == currentMonth
+    );
+    const currConsultationCount = consultationsCountList.find(
+      (item) => item._id.year == currentYear && item._id.month == currentMonth
+    );
+    const currSaleCount = salesCountList.find(
+      (item) => item._id.year == currentYear && item._id.month == currentMonth
+    );
+
+    if (currLeadCount) {
+      result.series[0].data.push(currLeadCount.total);
+    } else {
+      result.series[0].data.push(0);
+    }
+
+    if (currPlanCount) {
+      result.series[1].data.push(currPlanCount.total);
+    } else {
+      result.series[1].data.push(0);
+    }
+
+    if (currConsultationCount) {
+      result.series[2].data.push(currConsultationCount.total);
+    } else {
+      result.series[2].data.push(0);
+    }
+
+    if (currSaleCount) {
+      result.series[3].data.push(currSaleCount.total);
+    } else {
+      result.series[3].data.push(0);
+    }
+
+    result.categories.push(`${currentYear}, ${months[currentMonth - 1]}`);
+
+    currentDate.setMonth(currentMonth);
+  }
+
+  console.log(result);
+  console.log(result.series[0]);
+  console.log(result.series[1]);
+  console.log(result.series[2]);
+  console.log(result.series[3]);
+
+  return result;
+}
