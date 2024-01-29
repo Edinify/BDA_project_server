@@ -10,7 +10,7 @@ import { Course } from "../models/courseModel.js";
 // Create teacher
 
 export const createTeacher = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
 
   console.log(req.body);
 
@@ -31,18 +31,18 @@ export const createTeacher = async (req, res) => {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
-    console.log(1);
     const salt = await bcrypt.genSalt(10);
 
-    console.log(salt, password);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    console.log(2);
     const teacher = new Teacher({ ...req.body, password: hashedPassword });
     await teacher.populate("courses");
     await teacher.save();
-    console.log(3);
-    const teachersCount = await Teacher.countDocuments({ deleted: false });
+
+    const teachersCount = await Teacher.countDocuments({
+      deleted: false,
+      role: teacher.role,
+    });
     const lastPage = Math.ceil(teachersCount / 10);
 
     res

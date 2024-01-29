@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import logger from "../config/logger.js";
 import { Consultation } from "../models/consultationModel.js";
@@ -17,9 +18,6 @@ export const getFinance = async (req, res) => {
     } else if (startDate && endDate) {
       targetDate = calcDateWithMonthly(startDate, endDate);
     }
-
-    // console.log(startDate, endDate);
-    // console.log(targetDate, "--------");
 
     const incomes = await Income.find({
       date: {
@@ -86,11 +84,17 @@ export const getFinance = async (req, res) => {
 };
 
 export const getChartData = async (req, res) => {
-  const { monthCount, startDate, endDate } = req.query;
+  const { monthCount, startDate, endDate, courseId } = req.query;
 
-  console.log(req.query);
+  console.log(req.query, "ddddddddddddddddddddkkkkkkkkk");
   try {
     let targetDate;
+    let chartData = {};
+    let filterObj = {};
+
+    if (courseId) {
+      filterObj.course = new mongoose.Types.ObjectId(courseId);
+    }
 
     if (monthCount) {
       targetDate = calcDate(monthCount);
@@ -99,19 +103,19 @@ export const getChartData = async (req, res) => {
     }
 
     if (monthCount == 1 || (startDate && startDate === endDate)) {
-      getChartDataOneMonth(targetDate);
+      chartData = await getChartDataOneMonth(targetDate, filterObj);
     } else {
-      getChartDataManyMonth(targetDate);
+      chartData = await getChartDataManyMonth(targetDate, filterObj);
     }
 
-    res.status(200).json({});
+    res.status(200).json(chartData);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
 
-async function getChartDataOneMonth(targetDate) {
+async function getChartDataOneMonth(targetDate, filterObj) {
   const result = {
     series: [
       {
@@ -135,9 +139,11 @@ async function getChartDataOneMonth(targetDate) {
     categories: [],
   };
 
+  console.log(filterObj, "filter objjjjjj");
   const plansCountList = await Consultation.aggregate([
     {
       $match: {
+        ...filterObj,
         contactDate: {
           $gte: targetDate.startDate,
           $lte: targetDate.endDate,
@@ -155,6 +161,8 @@ async function getChartDataOneMonth(targetDate) {
     },
   ]);
 
+  console.log(plansCountList, "plans count list");
+
   const consultationsCountList = await Consultation.aggregate([
     {
       $match: {
@@ -163,6 +171,7 @@ async function getChartDataOneMonth(targetDate) {
           $lte: targetDate.endDate,
         },
         status: { $ne: "appointed" },
+        ...filterObj,
       },
     },
     {
@@ -186,6 +195,7 @@ async function getChartDataOneMonth(targetDate) {
           $lte: targetDate.endDate,
         },
         status: "sold",
+        ...filterObj,
       },
     },
     {
@@ -213,7 +223,7 @@ async function getChartDataOneMonth(targetDate) {
     {
       $group: {
         _id: { $dateToString: { format: "%d", date: "$date" } },
-        total: { $sum: 1 },
+        total: { $sum: "$count" },
       },
     },
     {
@@ -265,7 +275,7 @@ async function getChartDataOneMonth(targetDate) {
   return result;
 }
 
-async function getChartDataManyMonth(targetDate) {
+async function getChartDataManyMonth(targetDate, filterObj) {
   console.log("salam");
   const result = {
     series: [
@@ -311,6 +321,7 @@ async function getChartDataManyMonth(targetDate) {
           $gte: targetDate.startDate,
           $lte: targetDate.endDate,
         },
+        ...filterObj,
       },
     },
     {
@@ -335,13 +346,14 @@ async function getChartDataManyMonth(targetDate) {
           $lte: targetDate.endDate,
         },
         status: { $ne: "appointed" },
+        ...filterObj,
       },
     },
     {
       $group: {
         _id: {
-          year: { $year: "$contactDate" },
-          month: { $month: "$contactDate" },
+          year: { $year: "$constDate" },
+          month: { $month: "$constDate" },
         },
         total: { $sum: 1 },
       },
@@ -359,13 +371,14 @@ async function getChartDataManyMonth(targetDate) {
           $lte: targetDate.endDate,
         },
         status: "sold",
+        ...filterObj,
       },
     },
     {
       $group: {
         _id: {
-          year: { $year: "$contactDate" },
-          month: { $month: "$contactDate" },
+          year: { $year: "$constDate" },
+          month: { $month: "$constDate" },
         },
         total: { $sum: 1 },
       },
@@ -387,16 +400,18 @@ async function getChartDataManyMonth(targetDate) {
     {
       $group: {
         _id: {
-          year: { $year: "$contactDate" },
-          month: { $month: "$contactDate" },
+          year: { $year: "$date" },
+          month: { $month: "$date" },
         },
-        total: { $sum: 1 },
+        total: { $sum: "$count" },
       },
     },
     {
       $sort: { "_id.year": 1, "_id.month": 1 },
     },
   ]);
+
+  console.log(leadCountList, "leadCountList");
 
   const currentDate = new Date(targetDate.startDate);
 
@@ -445,12 +460,6 @@ async function getChartDataManyMonth(targetDate) {
 
     currentDate.setMonth(currentMonth);
   }
-
-  console.log(result);
-  console.log(result.series[0]);
-  console.log(result.series[1]);
-  console.log(result.series[2]);
-  console.log(result.series[3]);
 
   return result;
 }
