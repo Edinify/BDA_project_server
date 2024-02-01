@@ -29,6 +29,7 @@ import tutionFeeRoutes from "./routes/tutionFeeRoutes.js";
 import careerRoutes from "./routes/careerRoutes.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
+import eventRoutes from "./routes/eventRoutes.js";
 // import updateButtonRoutes from "./routes/updateButtonRoutes.js";
 
 import {
@@ -86,6 +87,7 @@ app.use("/api/finance", financeRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/lead", leadRoutes);
+app.use("/api/event", eventRoutes);
 
 app.get("/", (req, res) => {
   res.send("hello");
