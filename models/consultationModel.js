@@ -22,7 +22,6 @@ const consultationSchema = new Schema(
     },
     studentPhone: {
       type: String,
-      required: true,
     },
     course: {
       type: Schema.Types.ObjectId,
@@ -38,7 +37,6 @@ const consultationSchema = new Schema(
     },
     whereComing: {
       type: String,
-      // enum: ["instagram", "referral", "event", "externalAds", "other"],
       default: "other",
     },
     knowledge: {
@@ -55,7 +53,7 @@ const consultationSchema = new Schema(
       enum: ["appointed", "sold", "cancelled", "thinks"],
       default: "appointed",
     },
-    history: {
+    changes: {
       type: Object,
     },
   },

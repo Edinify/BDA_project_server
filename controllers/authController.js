@@ -279,7 +279,7 @@ const createAccessToken = (user) => {
         fullName: user.fullName,
       },
       process.env.SECRET_KEY,
-      { expiresIn: "6h" }
+      { expiresIn: "30d" }
     );
 
     return AccessToken;
@@ -310,7 +310,7 @@ const createRefreshToken = (user) => {
       fullName: user.fullName,
     },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "30d" }
   );
   return RefreshToken;
 };

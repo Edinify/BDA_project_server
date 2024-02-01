@@ -27,6 +27,9 @@ import consultationRoutes from "./routes/consultationRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
 import tutionFeeRoutes from "./routes/tutionFeeRoutes.js";
 import careerRoutes from "./routes/careerRoutes.js";
+import salesRoutes from "./routes/salesRoutes.js";
+import leadRoutes from "./routes/leadRoutes.js";
+import eventRoutes from "./routes/eventRoutes.js";
 // import updateButtonRoutes from "./routes/updateButtonRoutes.js";
 
 import {
@@ -83,6 +86,9 @@ app.use("/api/expense", expenseRoutes);
 app.use("/api/income", incomeRoutes);
 app.use("/api/finance", financeRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/sales", salesRoutes);
+app.use("/api/lead", leadRoutes);
+app.use("/api/event", eventRoutes);
 
 app.get("/", (req, res) => {
   res.send("hello");
@@ -94,36 +100,6 @@ app.get("/", (req, res) => {
 //   await wbm.send(phones, message);
 //   await wbm.end();
 // }).catch(err => console.log(err));
-
-
-const connectToDatabase = async (uri, port) => {
-  let connected = false;
-  let attempts = 0;
-  
-  while (!connected && attempts < 5) { // Можете изменить количество попыток по вашему усмотрению
-    try {
-      await mongoose.connect(uri);
-      connected = true;
-    } catch (err) {
-      attempts++;
-      console.error(`Connection to database failed (attempt ${attempts}): ${err.message}`);
-      // Подождем некоторое время перед следующей попыткой (например, 5 секунд)
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    }
-  }
-
-  if (connected) {
-    console.log("Connected to the database");
-    app.listen(port, () => {
-      console.log(`Server is listening at port ${port}`);
-      // Добавьте здесь ваш код, который нужно выполнить после успешного подключения
-    });
-  } else {
-    console.error("Failed to connect to the database after multiple attempts");
-  }
-};
-
-connectToDatabase(uri, port);
 
 // mongoose
 //   .connect(uri)
@@ -140,6 +116,34 @@ connectToDatabase(uri, port);
 //   })
 //   .catch((err) => console.log(err));
 
+const connectToDatabase = async (uri, port) => {
+  let connected = false;
+  let attempts = 0;
 
+  while (!connected && attempts < 5) {
+    // Можете изменить количество попыток по вашему усмотрению
+    try {
+      await mongoose.connect(uri);
+      connected = true;
+    } catch (err) {
+      attempts++;
+      console.error(
+        `Connection to database failed (attempt ${attempts}): ${err.message}`
+      );
+      // Подождем некоторое время перед следующей попыткой (например, 5 секунд)
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
 
+  if (connected) {
+    console.log("Connected to the database");
+    app.listen(port, () => {
+      console.log(`Server is listening at port ${port}`);
+      // Добавьте здесь ваш код, который нужно выполнить после успешного подключения
+    });
+  } else {
+    console.error("Failed to connect to the database after multiple attempts");
+  }
+};
 
+connectToDatabase(uri, port);

@@ -1,5 +1,6 @@
 import logger from "../config/logger.js";
 import { Course } from "../models/courseModel.js";
+import { Worker } from "../models/workerModel.js";
 
 // Get courses
 export const getCourses = async (req, res) => {
@@ -106,6 +107,8 @@ export const createCourse = async (req, res) => {
 export const updateCourse = async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
+  const { id: userId, role } = req.user;
+  let updatedData = req.body;
 
   try {
     const regexName = new RegExp(name || "", "i");
@@ -119,7 +122,21 @@ export const updateCourse = async (req, res) => {
       return res.status(409).json({ key: "course-already-exists" });
     }
 
-    const updatedCourse = await Course.findByIdAndUpdate(id, req.body, {
+    if (role === "worker") {
+      const worker = await Worker.findById(userId);
+
+      const power = worker.profiles.find(
+        (item) => item.profile === "courses"
+      )?.power;
+
+      if (power === "update") {
+        delete updatedData.changes;
+
+        updatedData = { changes: updatedData };
+      }
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(id, updatedData, {
       upsert: true,
       new: true,
       runValidators: true,
@@ -131,6 +148,7 @@ export const updateCourse = async (req, res) => {
 
     res.status(200).json(updatedCourse);
   } catch (err) {
+    console.log(err);
     logger.error({
       method: "PATCH",
       status: 500,
@@ -167,6 +185,46 @@ export const deleteCourse = async (req, res) => {
       courseId: id,
       functionName: deleteCourse.name,
     });
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Confirm course changes
+export const confirmCourseChanges = async (req, res) => {
+  const { id } = req.params;
+  const { changes } = req.body;
+
+  try {
+    const course = await Course.findByIdAndUpdate(
+      id,
+      { ...changes, changes: {} },
+      { new: true }
+    );
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.status(200).json(course);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Cancel course changes
+export const cancelCourseChanges = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const course = await Course.findByIdAndUpdate(
+      id,
+      { changes: {} },
+      { new: true }
+    );
+
+    res.status(200).json(course);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

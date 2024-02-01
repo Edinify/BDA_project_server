@@ -3,6 +3,7 @@ import { Lesson } from "../models/lessonModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import { calcDate } from "../calculate/calculateDate.js";
 import { Syllabus } from "../models/syllabusModel.js";
+import { Worker } from "../models/workerModel.js";
 
 // Create lesson
 export const createLesson = async (req, res) => {
@@ -248,20 +249,41 @@ export const getLessons = async (req, res) => {
 export const updateLesson = async (req, res) => {
   const { id } = req.params;
   const { date } = req.body;
-
-  console.log("update");
-  console.log(req.body);
-  console.log(id);
+  const { id: userId, role } = req.user;
+  let updatedData = req.body;
 
   try {
-    const updateData = req.body;
-
     if (date) {
       const day = new Date(date).getDay();
-      updateData.day = day == 0 ? 7 : day;
+      updatedData.day = day == 0 ? 7 : day;
     }
 
-    const updatedLesson = await Lesson.findByIdAndUpdate(id, updateData, {
+    if (role === "worker") {
+      const worker = await Worker.findById(userId);
+
+      const power = worker.profiles.find(
+        (item) => item.profile === "lessonTable"
+      )?.power;
+
+      if (power === "update") {
+        delete updatedData.changes;
+        const mainLesson = await Lesson.findById(id);
+        const mainLessonObj = mainLesson?.toObject();
+        const changes = { ...mainLessonObj?.changes };
+        delete mainLessonObj.changes;
+
+        const changesObj = { ...mainLessonObj, ...changes, ...updatedData };
+
+        const payload = new Lesson(changesObj);
+        await payload.populate("teacher students.student group mentor");
+
+        updatedData = {
+          changes: payload.toObject(),
+        };
+      }
+    }
+
+    const updatedLesson = await Lesson.findByIdAndUpdate(id, updatedData, {
       new: true,
     }).populate("teacher students.student group mentor");
 
@@ -289,6 +311,46 @@ export const deleteLesson = async (req, res) => {
 
     res.status(200).json(deletedLesson);
   } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Confirm lesson changes
+export const confirmLessonChanges = async (req, res) => {
+  const { id } = req.params;
+  const { changes } = req.body;
+
+  try {
+    const lesson = await Lesson.findByIdAndUpdate(
+      id,
+      { ...changes, changes: {} },
+      { new: true }
+    ).populate("teacher students.student group mentor");
+
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+
+    res.status(200).json(lesson);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Cancel lesson changes
+export const cancelLessonChanges = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const lesson = await Lesson.findByIdAndUpdate(
+      id,
+      { changes: {} },
+      { new: true }
+    ).populate("teacher students.student group mentor");
+
+    res.status(200).json(lesson);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

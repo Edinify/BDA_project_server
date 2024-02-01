@@ -52,7 +52,7 @@ const lessonSchema = new Schema(
       enum: ["unviewed", "confirmed", "cancelled"],
       default: "unviewed",
     },
-    history: {
+    changes: {
       type: Object,
     },
   },

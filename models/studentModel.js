@@ -58,6 +58,12 @@ const studentSchema = new Schema(
         discount: {
           type: Number,
         },
+        cvLink: {
+          type: String,
+        },
+        portfolioLink: {
+          type: String,
+        },
         payments: [
           {
             payment: {
@@ -75,7 +81,7 @@ const studentSchema = new Schema(
         ],
         status: {
           type: Boolean,
-          default: true,
+          default: false,
         },
         degree: {
           type: String,
