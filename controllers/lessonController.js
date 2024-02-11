@@ -52,8 +52,78 @@ export const createLessons = async (group) => {
     mentors,
   } = group;
 
-  console.log(startDate, endDate, lessonDate);
   try {
+    const freeDays = [
+      {
+        month: 3,
+        day: 8,
+      },
+      {
+        month: 3,
+        day: 20,
+      },
+      {
+        month: 3,
+        day: 21,
+      },
+      {
+        month: 3,
+        day: 22,
+      },
+      {
+        month: 3,
+        day: 23,
+      },
+      {
+        month: 3,
+        day: 24,
+      },
+      {
+        month: 4,
+        day: 10,
+      },
+      {
+        month: 4,
+        day: 11,
+      },
+      {
+        month: 5,
+        day: 9,
+      },
+      {
+        month: 5,
+        day: 28,
+      },
+      {
+        month: 6,
+        day: 15,
+      },
+      {
+        month: 6,
+        day: 26,
+      },
+      {
+        month: 6,
+        day: 16,
+      },
+      {
+        month: 6,
+        day: 17,
+      },
+      {
+        month: 11,
+        day: 8,
+      },
+      {
+        month: 11,
+        day: 9,
+      },
+      {
+        month: 12,
+        day: 9,
+      },
+    ];
+
     const checkLessons = await Lesson.findOne({ group: _id });
     const syllabus = await Syllabus.find({ courseId: course }).sort({
       orderNumber: 1,
@@ -66,13 +136,18 @@ export const createLessons = async (group) => {
     if (!startDate || !endDate || lessonDate.length == 0 || checkLessons)
       return;
 
-    console.log("salam");
-
     while (startDate <= endDate) {
       const currentDay = startDate.getDay();
+      const currentMonthDay = startDate.getDate();
+      const currentMonth = startDate.getMonth() + 1;
+
+      const checkFriday = freeDays.find(
+        (item) => item.month === currentMonth && item.day === currentMonthDay
+      );
       const checkDay = lessonDate?.find((item) => item.day === currentDay);
 
-      if (checkDay) {
+      if (checkDay && !checkFriday) {
+        console.log("not freeday");
         const currentDate = new Date(startDate);
         const studentsObj = students.map((student) => ({
           student,
@@ -116,7 +191,6 @@ export const createLessons = async (group) => {
 
     const result = await Lesson.insertMany(lessons);
 
-    console.log(result);
     return true;
   } catch (err) {
     console.log(err.message);
@@ -166,6 +240,7 @@ export const getLessons = async (req, res) => {
 
     res.status(200).json({ lessons, totalPages });
   } catch (err) {
+    console.log(err, "lesson error");
     res.status(500).json({ message: { error: err.message } });
   }
 };

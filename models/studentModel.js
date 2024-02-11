@@ -72,6 +72,9 @@ const studentSchema = new Schema(
             paymentDate: {
               type: Date,
             },
+            paidDate: {
+              type: Date,
+            },
             status: {
               type: String,
               default: "wait",

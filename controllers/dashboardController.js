@@ -1,217 +1,128 @@
 import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import logger from "../config/logger.js";
+import { Consultation } from "../models/consultationModel.js";
 import { Course } from "../models/courseModel.js";
-import { Expense } from "../models/expenseModel.js";
-import { Income } from "../models/incomeModel.js";
+import { Group } from "../models/groupModel.js";
+import { Lead } from "../models/leadModal.js";
 import { Lesson } from "../models/lessonModel.js";
 import { Student } from "../models/studentModel.js";
 import { Teacher } from "../models/teacherModel.js";
+import { Event } from "../models/eventModel.js";
 
-export const getConfirmedLessonsCount = async (req, res) => {
-  const { startDate, endDate, monthCount } = req.query;
+export const getAllStudentsCount = async (req, res) => {
+  try {
+    const studentsCount = await Student.countDocuments({
+      deleted: false,
+    });
+
+    res.status(200).json(studentsCount);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const getActiveStudentsCount = async (req, res) => {
+  try {
+    const studentsCount = await Student.countDocuments({
+      deleted: false,
+      "groups.status": false,
+    });
+
+    res.status(200).json(studentsCount);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const getAllGroupsCount = async (req, res) => {
+  try {
+    const groupsCount = await Group.countDocuments({});
+
+    res.status(200).json(groupsCount);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const getAllEventsCount = async (req, res) => {
+  const { monthCount, startDate, endDate } = req.query;
   const targetDate = calcDate(monthCount, startDate, endDate);
 
   try {
-    const confirmedCount = await Lesson.countDocuments({
-      status: "confirmed",
-      role: "current",
+    const eventsCount = await Event.countDocuments({
       date: {
         $gte: targetDate.startDate,
         $lte: targetDate.endDate,
       },
     });
 
-    res.status(200).json(confirmedCount);
+    res.status(200).json(eventsCount);
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      query: req.query,
-      for: "GET CONFIRMED LESSONS COUNT FOR DASHBOARD",
-      user: req.user,
-      functionName: getConfirmedLessonsCount.name,
-    });
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
 
-export const getCancelledLessonsCount = async (req, res) => {
-  const { startDate, endDate, monthCount } = req.query;
-  const targetDate = calcDate(monthCount, startDate, endDate);
+export const getConsultationsData = async (req, res) => {
   try {
-    const cancelledCount = await Lesson.countDocuments({
-      status: "cancelled",
-      role: "current",
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
+    const leadsCount = await Lead.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalLeadCount: { $sum: "$count" },
+        },
       },
+    ]);
+
+    console.log(leadsCount);
+    const plansCount = await Consultation.countDocuments();
+    const consultationsCount = await Consultation.countDocuments({
+      status: { $ne: "appointed" },
     });
-
-    res.status(200).json(cancelledCount);
-  } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      query: req.query,
-      for: "GET CANCELLED LESSONS COUNT FOR DASHBOARD",
-      user: req.user,
-      functionName: getCancelledLessonsCount.name,
-    });
-    res.status(500).json({ message: { error: err.message } });
-  }
-};
-
-export const getUnviewedLessons = async (req, res) => {
-  const currentDate = new Date();
-  currentDate.setDate(currentDate.getDate() - 1);
-  currentDate.setHours(23, 59, 59, 999);
-
-  try {
-    const result = [];
-
-    const unviewedLessons = await Lesson.find({
-      date: {
-        $lte: currentDate,
-      },
-      role: "current",
-      status: "unviewed",
-    }).populate("teacher course students.student");
-
-    unviewedLessons.forEach((lesson) => {
-      const checkTeacher = result.find(
-        (item) =>
-          item?.teacher?._id.toString() === lesson.teacher._id.toString()
-      );
-
-      if (checkTeacher) {
-        checkTeacher.lessons?.push(lesson);
-      } else {
-        result.push({
-          teacher: lesson.teacher,
-          lessons: [lesson],
-        });
-      }
-    });
-
-    res.status(200).json(result);
-  } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      for: "GET UNVIEWED LESSONS FOR DASHBOARD",
-      user: req.user,
-      functionName: getUnviewedLessons.name,
-    });
-    res.status(500).json({ message: { error: err.message } });
-  }
-};
-
-export const getFinance = async (req, res) => {
-  const targetDate = calcDate(1);
-
-  try {
-    const incomes = await Income.find({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
-
-    const expenses = await Expense.find({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
-
-    const totalIncome = incomes.reduce(
-      (total, income) => (total += income.amount),
-      0
-    );
-
-    const totalExpense = expenses.reduce(
-      (total, expense) => (total += expense.amount),
-      0
-    );
-
-    const confirmedLessons = await Lesson.find({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-      status: "confirmed",
-      role: "current",
-    });
-
-    const totalEarnings = confirmedLessons.reduce(
-      (total, lesson) => total + lesson.earnings,
-      0
-    );
-
-    const turnover = totalEarnings;
-
-    const profit = turnover - totalExpense;
+    const salesCount = await Consultation.countDocuments({ status: "sold" });
 
     const result = {
-      income: totalIncome.toFixed(2),
-      expense: totalExpense.toFixed(2),
-      turnover: turnover.toFixed(2),
-      profit: profit.toFixed(2),
+      leadsCount: leadsCount[0]?.totalLeadCount || 0,
+      plansCount,
+      consultationsCount,
+      salesCount,
     };
 
     res.status(200).json(result);
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      for: "GET FINANCE FOR DASHBOARD",
-      user: req.user,
-      functionName: getFinance.name,
-    });
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
 
 export const getCoursesStatistics = async (req, res) => {
-  const { monthCount, startDate, endDate } = req.query;
-  const targetDate = calcDate(monthCount, startDate, endDate);
   try {
-    const students = await Student.find({
-      createdAt: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
+    const allCourses = await Course.find();
+
+    const coursesStatistics = await Student.aggregate([
+      { $unwind: "$courses" },
+      {
+        $group: {
+          _id: "$courses",
+          count: { $sum: 1 },
+        },
       },
-    });
-    const courses = await Course.find();
+    ]);
 
-    const result = courses.map((course) => {
-      const courseStatistic = students.filter((student) => {
-        const coursesIds = student.courses.map((item) => item.course) || [];
-
-        return coursesIds.find(
-          (item) => item?.toString() === course._id?.toString()
-        );
-      });
-
-      return { courseName: course.name, value: courseStatistic.length };
+    const result = allCourses.map((course) => {
+      const currentCourseItem = coursesStatistics.find(
+        (item) => item._id.toString() === course._id.toString()
+      );
+      if (currentCourseItem) {
+        return { courseName: course.name, value: currentCourseItem.count };
+      } else {
+        return { courseName: course.name, value: 0 };
+      }
     });
 
     res.status(200).json(result);
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      query: req.query,
-      for: "GET COURSES STATISTICS FOR DASHBOARD",
-      user: req.user,
-      functionName: getCoursesStatistics.name,
-    });
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -220,35 +131,57 @@ export const getAdvertisingStatistics = async (req, res) => {
   const { monthCount, startDate, endDate } = req.query;
   const targetDate = calcDate(monthCount, startDate, endDate);
   try {
-    const students = await Student.find({
-      createdAt: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
+    const studentsCount = await Student.countDocuments();
+
     const advertisings = [
-      "instagram",
-      "referral",
-      "event",
-      "externalAds",
-      "other",
+      { name: "İnstagram Sponsorlu", key: "instagramSponsor" },
+      { name: "İnstagram standart", key: "instagramStandart" },
+      { name: "İnstruktor Tövsiyyəsi", key: "instructorRecommend" },
+      { name: "Dost Tövsiyyəsi", key: "friendRecommend" },
+      { name: "Sayt", key: "site" },
+      { name: "Tədbir", key: "event" },
+      { name: "AİESEC", key: "AİESEC" },
+      { name: "PO COMMUNİTY", key: "POCOMMUNİTY" },
+      { name: "Köhnə tələbə", key: "oldStudent" },
+      { name: "Staff tövsiyyəsi", key: "staffRecommend" },
+      { name: "SMS REKLAMI", key: "smsAd" },
+      { name: "PROMOKOD", key: "promocode" },
+      { name: "Resale", key: "resale" },
+      { name: "Digər", key: "other" },
     ];
 
+    const advertisingStatistics = await Student.aggregate([
+      { $unwind: "$whereComing" },
+      {
+        $group: {
+          _id: "$whereComing",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
     const result = advertisings.map((advertising) => {
-      const advertisingStatistics = students.filter(
-        (student) => student.whereComing === advertising
+      const currentAdvertising = advertisingStatistics.find(
+        (item) => item._id === advertising.key
       );
 
-      const value =
-        ((advertisingStatistics.length * 100) / students.length || 0).toFixed(
-          2
-        ) || 0;
-
-      return {
-        name: advertising,
-        value,
-      };
+      if (currentAdvertising) {
+        const value = parseFloat(
+          ((currentAdvertising.count * 100) / studentsCount).toFixed(2)
+        );
+        return {
+          name: advertising.name,
+          value,
+        };
+      } else {
+        return {
+          name: advertising.name,
+          value: 0,
+        };
+      }
     });
+
+    result.sort((a, b) => b.value - a.value);
 
     res.status(200).json(result);
   } catch (err) {
@@ -364,22 +297,31 @@ export const getLessonsCountChartData = async (req, res) => {
     const months = [];
     const studentsCountList = [];
 
+    const test = await Student.find();
+
+    console.log(test);
+
     while (targetDate.startDate <= targetDate.endDate) {
       const targetYear = targetDate.startDate.getFullYear();
-      const targetMonth = targetDate.startDate.getMonth() + 1;
+      const currentDate = new Date(targetDate.startDate);
+      currentDate.setMonth(targetDate.startDate.getMonth() + 1);
+
+      console.log(targetDate);
 
       const monthName = new Intl.DateTimeFormat("en-US", {
         month: "long",
       }).format(targetDate.startDate);
 
       const studentsCount = await Student.countDocuments({
-        $expr: {
-          $and: [
-            { $eq: [{ $year: "$createdAt" }, targetYear] },
-            { $eq: [{ $month: "$createdAt" }, targetMonth] },
-          ],
+        "groups.contractStartDate": {
+          $lte: currentDate,
+        },
+        "groups.contractEndDate": {
+          $gte: targetDate.startDate,
         },
       });
+
+      console.log(studentsCount, "aaaaaaa");
 
       months.push({
         month: monthName,
@@ -389,6 +331,9 @@ export const getLessonsCountChartData = async (req, res) => {
 
       targetDate.startDate.setMonth(targetDate.startDate.getMonth() + 1);
     }
+
+    console.log(months);
+    console.log(studentsCountList);
 
     res.status(200).json({ months, values: studentsCountList });
   } catch (err) {
