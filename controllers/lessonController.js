@@ -199,25 +199,30 @@ export const createLessons = async (group) => {
 };
 
 export const getLessons = async (req, res) => {
-  const { groupId, startDate, endDate } = req.query;
+  const { groupId, startDate, endDate, status } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
   try {
-    let targetDate;
-    if (startDate && endDate) {
-      targetDate = calcDate(null, startDate, endDate);
-    } else {
-      targetDate = calcDate(1);
-    }
-
     const filterObj = {
       group: groupId,
-      // date: {
-      //   $gte: targetDate.startDate,
-      //   $lte: targetDate.endDate,
-      // },
     };
+
+    if (startDate && endDate) {
+      const targetDate = calcDate(null, startDate, endDate);
+      filterObj.date = {
+        $gte: targetDate.startDate,
+        $lte: targetDate.endDate,
+      };
+    }
+
+    if (
+      status === "unviewed" ||
+      status === "confirmed" ||
+      status === "cancelled"
+    ) {
+      filterObj.status = status;
+    }
 
     const lessonsCount = await Lesson.countDocuments(filterObj);
 

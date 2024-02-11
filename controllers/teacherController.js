@@ -140,7 +140,7 @@ export const getCheckedTeachers = async (req, res) => {
 
 // Get teacher for pagination
 export const getTeachersForPagination = async (req, res) => {
-  const { searchQuery, status, role } = req.query;
+  const { searchQuery, status, role, courseId } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
@@ -155,6 +155,8 @@ export const getTeachersForPagination = async (req, res) => {
     if (status === "active") filterObj.status = true;
 
     if (status === "deactive") filterObj.status = false;
+
+    if (courseId) filterObj.courses = courseId;
 
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");

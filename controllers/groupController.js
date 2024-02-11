@@ -68,7 +68,7 @@ export const getGroupsWithTeacherId = async (req, res) => {
 
 // Get groups for pagination
 export const getGroupsForPagination = async (req, res) => {
-  const { searchQuery, completed } = req.query;
+  const { searchQuery, completed, courseId, teacherId, mentorId } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
@@ -84,6 +84,12 @@ export const getGroupsForPagination = async (req, res) => {
     } else {
       return res.status(400).json({ message: "no completed status" });
     }
+
+    if (courseId) filterObj.course = courseId;
+
+    if (teacherId) filterObj.teachers = teacherId;
+
+    if (mentorId) filterObj.mentors = mentorId;
 
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");
