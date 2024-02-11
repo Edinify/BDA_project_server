@@ -1,38 +1,25 @@
 import express from "express";
 import { authMiddleware, checkSuperAdmin } from "../middleware/auth.js";
 import {
+  getActiveStudentsCount,
   getAdvertisingStatistics,
-  getCancelledLessonsCount,
-  getConfirmedLessonsCount,
+  getAllEventsCount,
+  getAllGroupsCount,
+  getAllStudentsCount,
+  getConsultationsData,
   getCoursesStatistics,
-  getFinance,
   getLessonsCountChartData,
   getTachersResults,
-  getUnviewedLessons,
 } from "../controllers/dashboardController.js";
 
 const router = express.Router();
 
-router.get(
-  "/confirmed",
-  authMiddleware,
-  checkSuperAdmin,
-  getConfirmedLessonsCount
-);
-router.get(
-  "/cancelled",
-  authMiddleware,
-  checkSuperAdmin,
-  getCancelledLessonsCount
-);
-router.get("/unviewed", authMiddleware, checkSuperAdmin, getUnviewedLessons);
-router.get("/finance", authMiddleware, checkSuperAdmin, getFinance);
-router.get(
-  "/course-statistic",
-  authMiddleware,
-  checkSuperAdmin,
-  getCoursesStatistics
-);
+router.get("/all-students", getAllStudentsCount);
+router.get("/active-students", getActiveStudentsCount);
+router.get("/all-groups", getAllGroupsCount);
+router.get("/events", getAllEventsCount);
+router.get("/course-statistic", getCoursesStatistics);
+router.get("/consult-statistic", getConsultationsData);
 router.get(
   "/advertising",
   authMiddleware,

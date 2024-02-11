@@ -37,7 +37,6 @@ import {
   deleteNotificationsForBirthday,
 } from "./controllers/notificationController.js";
 import { calcDate } from "./calculate/calculateDate.js";
-import { getUnviewedLessons } from "./controllers/dashboardController.js";
 
 import cron from "node-cron";
 import logger from "./config/logger.js";

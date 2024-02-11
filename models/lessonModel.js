@@ -59,4 +59,6 @@ const lessonSchema = new Schema(
   { timestamps: true }
 );
 
+lessonSchema.index({ date: 1 });
+
 export const Lesson = mongoose.model("Lesson", lessonSchema);
