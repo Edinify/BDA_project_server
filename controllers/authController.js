@@ -53,7 +53,7 @@ export const registerSuperAdmin = async (req, res) => {
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
+  console.log(req.body)
   try {
     const regexEmail = new RegExp(email, "i");
 
@@ -88,9 +88,6 @@ export const login = async (req, res) => {
       secure: true,
     });
 
-    res.on("finish", () => {
-      console.log("Response Cookies:", res.getHeaders()["set-cookie"]);
-    });
 
     res.status(200).json({
       AccessToken: AccessToken,
@@ -379,7 +376,7 @@ const revokeTokenFromDatabase = async (refreshToken) => {
 // Get user
 export const getUser = async (req, res) => {
   const { id, role } = req.user;
-
+  console.log(id, role)
   try {
     let user;
     if (role === "super-admin") {

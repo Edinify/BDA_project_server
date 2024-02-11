@@ -21,7 +21,7 @@ const adminSchema = new Schema(
       type: String,
       default: "super-admin",
     },
-    otp: Number,
+    // otp: Number,
   },
   { timestamps: true }
 );
