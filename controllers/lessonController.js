@@ -52,8 +52,38 @@ export const createLessons = async (group) => {
     mentors,
   } = group;
 
-  console.log(startDate, endDate, lessonDate);
   try {
+    const freeDays = [
+      {
+        month: 1,
+        day: 1,
+      },
+      {
+        month: 1,
+        day: 2,
+      },
+      {
+        month: 1,
+        day: 3,
+      },
+      {
+        month: 1,
+        day: 4,
+      },
+      {
+        month: 3,
+        day: 20,
+      },
+      {
+        month: 3,
+        day: 21,
+      },
+      {
+        month: 12,
+        day: 31,
+      },
+    ];
+
     const checkLessons = await Lesson.findOne({ group: _id });
     const syllabus = await Syllabus.find({ courseId: course }).sort({
       orderNumber: 1,
@@ -66,13 +96,18 @@ export const createLessons = async (group) => {
     if (!startDate || !endDate || lessonDate.length == 0 || checkLessons)
       return;
 
-    console.log("salam");
-
     while (startDate <= endDate) {
-      const currentDay = startDate.getDay();
+      const currentDay = startDate.getDay() > 0 ? startDate.getDay() : 7;
+      const currentMonthDay = startDate.getDate();
+      const currentMonth = startDate.getMonth() + 1;
+
+      const checkFriday = freeDays.find(
+        (item) => item.month === currentMonth && item.day === currentMonthDay
+      );
       const checkDay = lessonDate?.find((item) => item.day === currentDay);
 
-      if (checkDay) {
+      if (checkDay && !checkFriday) {
+        console.log("not freeday");
         const currentDate = new Date(startDate);
         const studentsObj = students.map((student) => ({
           student,
@@ -116,7 +151,6 @@ export const createLessons = async (group) => {
 
     const result = await Lesson.insertMany(lessons);
 
-    console.log(result);
     return true;
   } catch (err) {
     console.log(err.message);
@@ -125,25 +159,30 @@ export const createLessons = async (group) => {
 };
 
 export const getLessons = async (req, res) => {
-  const { groupId, startDate, endDate } = req.query;
+  const { groupId, startDate, endDate, status } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
   try {
-    let targetDate;
-    if (startDate && endDate) {
-      targetDate = calcDate(null, startDate, endDate);
-    } else {
-      targetDate = calcDate(1);
-    }
-
     const filterObj = {
       group: groupId,
-      // date: {
-      //   $gte: targetDate.startDate,
-      //   $lte: targetDate.endDate,
-      // },
     };
+
+    if (startDate && endDate) {
+      const targetDate = calcDate(null, startDate, endDate);
+      filterObj.date = {
+        $gte: targetDate.startDate,
+        $lte: targetDate.endDate,
+      };
+    }
+
+    if (
+      status === "unviewed" ||
+      status === "confirmed" ||
+      status === "cancelled"
+    ) {
+      filterObj.status = status;
+    }
 
     const lessonsCount = await Lesson.countDocuments(filterObj);
 
@@ -166,6 +205,7 @@ export const getLessons = async (req, res) => {
 
     res.status(200).json({ lessons, totalPages });
   } catch (err) {
+    console.log(err, "lesson error");
     res.status(500).json({ message: { error: err.message } });
   }
 };

@@ -26,4 +26,6 @@ const syllabusSchema = new Schema(
   { timestamps: true }
 );
 
+syllabusSchema.index({ orderNumber: 1 });
+
 export const Syllabus = mongoose.model("Syllabus", syllabusSchema);

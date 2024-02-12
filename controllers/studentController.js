@@ -87,7 +87,7 @@ export const getActiveStudents = async (req, res) => {
 
 // Get students for pagination
 export const getStudentsForPagination = async (req, res) => {
-  const { searchQuery, status } = req.query;
+  const { searchQuery, status, courseId, groupId } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
@@ -99,6 +99,10 @@ export const getStudentsForPagination = async (req, res) => {
     if (status === "active") filterObj.status = true;
 
     if (status === "deactive") filterObj.status = false;
+
+    if (courseId) filterObj.courses = courseId;
+
+    if (groupId) filterObj["groups.group"] = groupId;
 
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");
