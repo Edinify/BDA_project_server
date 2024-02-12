@@ -72,13 +72,24 @@ const studentSchema = new Schema(
             paymentDate: {
               type: Date,
             },
-            paidDate: {
-              type: Date,
-            },
             status: {
               type: String,
               default: "wait",
-              enum: ["wait", "paid", "confirm", "cancel"],
+              enum: ["wait", "paid"],
+            },
+          },
+        ],
+        paids: [
+          {
+            payment: {
+              type: Number,
+            },
+            paymentDate: {
+              type: Date,
+            },
+            confirmed: {
+              type: Boolean,
+              default: false,
             },
           },
         ],

@@ -55,8 +55,20 @@ export const createLessons = async (group) => {
   try {
     const freeDays = [
       {
-        month: 3,
-        day: 8,
+        month: 1,
+        day: 1,
+      },
+      {
+        month: 1,
+        day: 2,
+      },
+      {
+        month: 1,
+        day: 3,
+      },
+      {
+        month: 1,
+        day: 4,
       },
       {
         month: 3,
@@ -67,60 +79,8 @@ export const createLessons = async (group) => {
         day: 21,
       },
       {
-        month: 3,
-        day: 22,
-      },
-      {
-        month: 3,
-        day: 23,
-      },
-      {
-        month: 3,
-        day: 24,
-      },
-      {
-        month: 4,
-        day: 10,
-      },
-      {
-        month: 4,
-        day: 11,
-      },
-      {
-        month: 5,
-        day: 9,
-      },
-      {
-        month: 5,
-        day: 28,
-      },
-      {
-        month: 6,
-        day: 15,
-      },
-      {
-        month: 6,
-        day: 26,
-      },
-      {
-        month: 6,
-        day: 16,
-      },
-      {
-        month: 6,
-        day: 17,
-      },
-      {
-        month: 11,
-        day: 8,
-      },
-      {
-        month: 11,
-        day: 9,
-      },
-      {
         month: 12,
-        day: 9,
+        day: 31,
       },
     ];
 
@@ -137,7 +97,7 @@ export const createLessons = async (group) => {
       return;
 
     while (startDate <= endDate) {
-      const currentDay = startDate.getDay();
+      const currentDay = startDate.getDay() > 0 ? startDate.getDay() : 7;
       const currentMonthDay = startDate.getDate();
       const currentMonth = startDate.getMonth() + 1;
 

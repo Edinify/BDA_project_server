@@ -56,7 +56,9 @@ export const getTutionFees = async (req, res) => {
 };
 
 export const updateTuitionFee = async (req, res) => {
-  const { studentId, group, payments } = req.body;
+  const { studentId, group, paids } = req.body;
+
+  console.log(req.body);
 
   try {
     const student = await Student.findById(studentId);
@@ -69,19 +71,13 @@ export const updateTuitionFee = async (req, res) => {
       (item) => item.group.toString() === group._id.toString()
     );
 
-    if (
-      !targetStudentGroup ||
-      !targetStudentGroup.payments ||
-      targetStudentGroup.payments.length === 0
-    ) {
+    if (!targetStudentGroup) {
       return res.status(200).json();
     }
 
-    targetStudentGroup.payments = payments;
+    targetStudentGroup.paids = paids;
 
     await student.save();
-
-    console.log(student.groups[1].payments);
 
     res.status(200).json();
   } catch (err) {
