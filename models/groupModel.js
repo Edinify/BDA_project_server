@@ -53,9 +53,10 @@ const groupSchema = new Schema({
       },
     },
   ],
-  completed: {
-    type: Boolean,
-    default: false,
+  status: {
+    type: String,
+    enum: ["waiting", "current", "ended"],
+    default: "waiting",
   },
   changes: {
     type: Object,

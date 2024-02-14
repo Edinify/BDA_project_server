@@ -20,15 +20,17 @@ export const getGroupsWithCourseId = async (req, res) => {
   const { groupsCount, searchQuery, courseIds } = req.query;
   const currentDate = new Date();
 
+  console.log(req.query);
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
+
 
     const groups = await Group.find({
       name: { $regex: regexSearchQuery },
       course: { $in: courseIds },
-      endDate: {
-        $gte: currentDate,
-      },
+      // endDate: {
+      //   $gte: currentDate,
+      // },
     })
       .skip(parseInt(groupsCount || 0))
       .limit(parseInt(groupsCount || 0) + 30)

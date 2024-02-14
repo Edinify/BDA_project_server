@@ -149,6 +149,8 @@ export const getStudentsForPagination = async (req, res) => {
         });
     }
 
+    console.log(totalPages, "total pages");
+
     res.status(200).json({ students, totalPages });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
