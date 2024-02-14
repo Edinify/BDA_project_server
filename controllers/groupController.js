@@ -20,15 +20,16 @@ export const getGroupsWithCourseId = async (req, res) => {
   const { groupsCount, searchQuery, courseIds } = req.query;
   const currentDate = new Date();
 
+  console.log(req.query);
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
 
     const groups = await Group.find({
       name: { $regex: regexSearchQuery },
       course: { $in: courseIds },
-      endDate: {
-        $gte: currentDate,
-      },
+      // endDate: {
+      //   $gte: currentDate,
+      // },
     })
       .skip(parseInt(groupsCount || 0))
       .limit(parseInt(groupsCount || 0) + 30)
@@ -68,22 +69,14 @@ export const getGroupsWithTeacherId = async (req, res) => {
 
 // Get groups for pagination
 export const getGroupsForPagination = async (req, res) => {
-  const { searchQuery, completed, courseId, teacherId, mentorId } = req.query;
+  const { searchQuery, status, courseId, teacherId, mentorId } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
   try {
     let totalPages;
     let groups;
-    const filterObj = {};
-
-    if (completed === "true") {
-      filterObj.completed = true;
-    } else if (completed === "false") {
-      filterObj.completed = false;
-    } else {
-      return res.status(400).json({ message: "no completed status" });
-    }
+    const filterObj = { status };
 
     if (courseId) filterObj.course = courseId;
 

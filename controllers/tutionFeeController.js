@@ -8,6 +8,7 @@ export const getTutionFees = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
+  console.log(req.query);
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
     const filterObj = {};
@@ -37,6 +38,8 @@ export const getTutionFees = async (req, res) => {
         },
       });
 
+    console.log(students);
+
     const tutionFees = students.reduce((list, student) => {
       const tutionFee = student.groups.map((item) => ({
         ...student.toObject(),
@@ -51,6 +54,7 @@ export const getTutionFees = async (req, res) => {
 
     res.status(200).json({ tutionFees, totalPages });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
