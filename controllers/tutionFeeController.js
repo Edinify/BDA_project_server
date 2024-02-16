@@ -2,9 +2,169 @@ import { calcDate } from "../calculate/calculateDate.js";
 import { Student } from "../models/studentModel.js";
 import { v4 as uuidv4 } from "uuid";
 
+//  Get paying students
+async function getPayingStutdents() {
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const payingStudents = await Student.aggregate([
+    {
+      $project: {
+        fullName: 1,
+        groups: 1,
+      },
+    },
+    {
+      $addFields: {
+        totalPayments: {
+          $sum: {
+            $map: {
+              input: "$groups",
+              as: "group",
+              in: {
+                $sum: {
+                  $map: {
+                    input: "$$group.payments",
+                    as: "payment",
+                    in: {
+                      $cond: [
+                        { $lte: ["$$payment.paymentDate", endOfDay] },
+                        "$$payment.payment",
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        totalPaids: {
+          $sum: {
+            $map: {
+              input: "$groups",
+              as: "group",
+              in: {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$$group.paids",
+                        as: "paid",
+                        cond: { $eq: ["$$paid.confirmed", true] },
+                      },
+                    },
+                    as: "paid",
+                    in: "$$paid.payment",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        balance: { $subtract: ["$totalPayments", "$totalPaids"] },
+      },
+    },
+    {
+      $match: {
+        balance: { $gt: 0 },
+      },
+    },
+  ]);
+
+  return payingStudents.map((item) => item._id);
+}
+
+// Get payment results
+async function getPaymentsResults() {
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const totalLatePaymentObj = await Student.aggregate([
+    {
+      $project: {
+        fullName: 1,
+        groups: 1,
+      },
+    },
+    {
+      $addFields: {
+        totalPayments: {
+          $sum: {
+            $map: {
+              input: "$groups",
+              as: "group",
+              in: {
+                $sum: {
+                  $map: {
+                    input: "$$group.payments",
+                    as: "payment",
+                    in: {
+                      $cond: [
+                        { $lte: ["$$payment.paymentDate", endOfDay] },
+                        "$$payment.payment",
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        totalPaids: {
+          $sum: {
+            $map: {
+              input: "$groups",
+              as: "group",
+              in: {
+                $sum: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$$group.paids",
+                        as: "paid",
+                        cond: { $eq: ["$$paid.confirmed", true] },
+                      },
+                    },
+                    as: "paid",
+                    in: "$$paid.payment",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        balance: { $subtract: ["$totalPayments", "$totalPaids"] },
+      },
+    },
+    {
+      $match: {
+        balance: { $gt: 0 },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalBalance: { $sum: "$balance" },
+      },
+    },
+  ]);
+
+  return { totalLatePayment: totalLatePaymentObj[0].totalBalance };
+}
+
 // get tution fees
 export const getTutionFees = async (req, res) => {
-  const { searchQuery, groupId, courseId } = req.query;
+  const { searchQuery, groupId, courseId, paymentStatus } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
@@ -12,6 +172,11 @@ export const getTutionFees = async (req, res) => {
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
     const filterObj = {};
+
+    if (paymentStatus === "latePayment") {
+      const payingStudentsIds = await getPayingStutdents();
+      filterObj._id = { $in: payingStudentsIds };
+    }
 
     if (groupId) filterObj["groups.group"] = groupId;
 
@@ -38,8 +203,6 @@ export const getTutionFees = async (req, res) => {
         },
       });
 
-    console.log(students);
-
     const tutionFees = students.reduce((list, student) => {
       const tutionFee = student.groups.map((item) => ({
         ...student.toObject(),
@@ -52,7 +215,13 @@ export const getTutionFees = async (req, res) => {
       return [...list, ...tutionFee];
     }, []);
 
-    res.status(200).json({ tutionFees, totalPages });
+    const paymentsResults = await getPaymentsResults();
+
+    res.status(200).json({
+      tutionFees,
+      totalPages,
+      paymentsResults,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

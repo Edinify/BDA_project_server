@@ -42,14 +42,15 @@ import cron from "node-cron";
 import logger from "./config/logger.js";
 import { Lesson } from "./models/lessonModel.js";
 import router from "./routes/syllabusRoutes.js";
+import { Student } from "./models/studentModel.js";
+import { Group } from "./models/groupModel.js";
 
 dotenv.config();
-
 
 const app = express();
 const port = process.env.PORT;
 const uri = process.env.DB_URI;
-console.log("start run")
+console.log("start run");
 app.use(
   cors({
     origin: process.env.URL_PORT,
@@ -92,8 +93,6 @@ app.use("/api/event", eventRoutes);
 app.get("/", (req, res) => {
   res.send("hello");
 });
-
-
 
 // wbm.start().then(async () => {
 //   const phones = ['123456'];
@@ -138,9 +137,81 @@ const connectToDatabase = async (uri, port) => {
 
   if (connected) {
     console.log("Connected to the database");
-    app.listen(port, () => {
+    app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
-      // Добавьте здесь ваш код, который нужно выполнить после успешного подключения
+
+      // const endOfDay = new Date();
+
+      // const test = await Student.aggregate([
+      //   {
+      //     $project: {
+      //       fullName: 1,
+      //       groups: 1,
+      //     },
+      //   },
+      //   {
+      //     $addFields: {
+      //       totalPayments: {
+      //         $sum: {
+      //           $map: {
+      //             input: "$groups",
+      //             as: "group",
+      //             in: {
+      //               $sum: {
+      //                 $map: {
+      //                   input: "$$group.payments",
+      //                   as: "payment",
+      //                   in: {
+      //                     $cond: [
+      //                       { $lte: ["$$payment.paymentDate", endOfDay] },
+      //                       "$$payment.payment",
+      //                       0,
+      //                     ],
+      //                   },
+      //                 },
+      //               },
+      //             },
+      //           },
+      //         },
+      //       },
+      //       totalPaids: {
+      //         $sum: {
+      //           $map: {
+      //             input: "$groups",
+      //             as: "group",
+      //             in: {
+      //               $sum: {
+      //                 $map: {
+      //                   input: {
+      //                     $filter: {
+      //                       input: "$$group.paids",
+      //                       as: "paid",
+      //                       cond: { $eq: ["$$paid.confirmed", true] },
+      //                     },
+      //                   },
+      //                   as: "paid",
+      //                   in: "$$paid.payment",
+      //                 },
+      //               },
+      //             },
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      //   {
+      //     $addFields: {
+      //       balance: { $subtract: ["$totalPayments", "$totalPaids"] },
+      //     },
+      //   },
+      //   {
+      //     $match: {
+      //       balance: { $gt: 0 },
+      //     },
+      //   },
+      // ]);
+
+      // console.log(test);
     });
   } else {
     console.error("Failed to connect to the database after multiple attempts");
