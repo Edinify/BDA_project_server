@@ -31,6 +31,11 @@ const studentSchema = new Schema(
       // enum: ["instagram", "referral", "event", "externalAds", "other"],
       default: "other",
     },
+    whereSend: {
+      type: String,
+      // enum: ["instagram", "referral", "event", "externalAds", "other"],
+      default: "other",
+    },
     groups: [
       {
         group: {
@@ -41,6 +46,9 @@ const studentSchema = new Schema(
           type: Date,
         },
         contractEndDate: {
+          type: Date,
+        },
+        paymentStartDate: {
           type: Date,
         },
         payment: {
