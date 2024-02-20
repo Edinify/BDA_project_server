@@ -149,7 +149,7 @@ export const getStudentsForPagination = async (req, res) => {
         });
     }
 
-    console.log(totalPages, "total pages");
+  
 
     res.status(200).json({ students, totalPages });
   } catch (err) {

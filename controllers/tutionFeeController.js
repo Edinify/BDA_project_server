@@ -45,19 +45,24 @@ async function getPayingStutdents() {
               input: "$groups",
               as: "group",
               in: {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: "$$group.paids",
+                $ifNull: [
+                  {
+                    $sum: {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$$group.paids",
+                            as: "paid",
+                            cond: { $eq: ["$$paid.confirmed", true] },
+                          },
+                        },
                         as: "paid",
-                        cond: { $eq: ["$$paid.confirmed", true] },
+                        in: "$$paid.payment",
                       },
                     },
-                    as: "paid",
-                    in: "$$paid.payment",
                   },
-                },
+                  0,
+                ],
               },
             },
           },
@@ -122,19 +127,24 @@ async function getPaymentsResults() {
               input: "$groups",
               as: "group",
               in: {
-                $sum: {
-                  $map: {
-                    input: {
-                      $filter: {
-                        input: "$$group.paids",
+                $ifNull: [
+                  {
+                    $sum: {
+                      $map: {
+                        input: {
+                          $filter: {
+                            input: "$$group.paids",
+                            as: "paid",
+                            cond: { $eq: ["$$paid.confirmed", true] },
+                          },
+                        },
                         as: "paid",
-                        cond: { $eq: ["$$paid.confirmed", true] },
+                        in: "$$paid.payment",
                       },
                     },
-                    as: "paid",
-                    in: "$$paid.payment",
                   },
-                },
+                  0,
+                ],
               },
             },
           },
@@ -159,7 +169,9 @@ async function getPaymentsResults() {
     },
   ]);
 
-  return { totalLatePayment: totalLatePaymentObj[0].totalBalance };
+  const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
+
+  return { totalLatePayment };
 }
 
 // get tution fees
