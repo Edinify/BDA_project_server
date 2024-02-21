@@ -57,9 +57,18 @@ export const getCareers = async (req, res) => {
 };
 
 export const updateCareer = async (req, res) => {
-  const { studentId, group, portfolioLink, cvLink } = req.body;
-
-  console.log(req.body);
+  const {
+    studentId,
+    group,
+    portfolioLink,
+    cvLink,
+    currentWorkPlace,
+    currentWorkPosition,
+    previousWorkPlace,
+    previousWorkPosition,
+    workStartDate,
+    workStatus,
+  } = req.body;
 
   try {
     const student = await Student.findById(studentId);
@@ -78,10 +87,14 @@ export const updateCareer = async (req, res) => {
 
     targetStudentGroup.portfolioLink = portfolioLink;
     targetStudentGroup.cvLink = cvLink;
+    targetStudentGroup.currentWorkPlace = currentWorkPlace;
+    targetStudentGroup.currentWorkPosition = currentWorkPosition;
+    targetStudentGroup.previousWorkPlace = previousWorkPlace;
+    targetStudentGroup.previousWorkPosition = previousWorkPosition;
+    targetStudentGroup.workStartDate = workStartDate;
+    targetStudentGroup.workStatus = workStatus;
 
     await student.save();
-
-    console.log(student);
 
     res.status(200).json();
   } catch (err) {
