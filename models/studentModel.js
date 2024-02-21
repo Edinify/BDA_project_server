@@ -72,6 +72,24 @@ const studentSchema = new Schema(
         portfolioLink: {
           type: String,
         },
+        workStatus: {
+          type: String,
+        },
+        previousWorkPlace: {
+          type: String,
+        },
+        previousWorkPosition: {
+          type: String,
+        },
+        currentWorkPlace: {
+          type: String,
+        },
+        currentWorkPosition: {
+          type: String,
+        },
+        workStartDate: {
+          type: Date,
+        },
         payments: [
           {
             payment: {
