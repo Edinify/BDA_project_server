@@ -5,6 +5,7 @@ import { Group } from "../models/groupModel.js";
 import { Course } from "../models/courseModel.js";
 import { Worker } from "../models/workerModel.js";
 import { Teacher } from "../models/teacherModel.js";
+import mongoose from "mongoose";
 
 // Create student
 export const createStudent = async (req, res) => {
@@ -149,10 +150,30 @@ export const getStudentsForPagination = async (req, res) => {
         });
     }
 
-  
+    students = await Promise.all(
+      students.map(async (student) => {
+        const targetLessons = Lesson.aggregate([
+          { $unwind: "$students" },
+          {
+            $match: {
+              "students.student": new mongoose.Types.ObjectId(student._id),
+            },
+          },
+          { $match: { "students.attendance": -1, status: "confirmed" } },
+          { $group: { _id: null, count: { $sum: 1 } } },
+        ]);
+
+        const result = await targetLessons.exec();
+
+        return { ...student.toObject(), qbCount: result[0]?.count || 0 };
+      })
+    );
+
+    console.log(students);
 
     res.status(200).json({ students, totalPages });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
