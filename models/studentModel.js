@@ -73,7 +73,7 @@ const studentSchema = new Schema(
           type: String,
         },
         workStatus: {
-          type: String,
+          type: Array,
         },
         previousWorkPlace: {
           type: String,
