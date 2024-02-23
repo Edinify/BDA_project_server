@@ -44,8 +44,11 @@ import { Lesson } from "./models/lessonModel.js";
 import router from "./routes/syllabusRoutes.js";
 import { Student } from "./models/studentModel.js";
 import { Group } from "./models/groupModel.js";
+import { getWeeklyGroupTable } from "./controllers/dashboardController.js";
 
 dotenv.config();
+
+
 
 const app = express();
 const port = process.env.PORT;
@@ -142,6 +145,8 @@ const connectToDatabase = async (uri, port) => {
     console.log("Connected to the database");
     app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
+
+      // getWeeklyGroupTable()
 
       // const endOfDay = new Date();
 

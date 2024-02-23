@@ -74,7 +74,6 @@ export const getConsultationsData = async (req, res) => {
       },
     ]);
 
-    console.log(leadsCount);
     const plansCount = await Consultation.countDocuments();
     const consultationsCount = await Consultation.countDocuments({
       status: { $ne: "appointed" },
@@ -299,14 +298,10 @@ export const getLessonsCountChartData = async (req, res) => {
 
     const test = await Student.find();
 
-    console.log(test);
-
     while (targetDate.startDate <= targetDate.endDate) {
       const targetYear = targetDate.startDate.getFullYear();
       const currentDate = new Date(targetDate.startDate);
       currentDate.setMonth(targetDate.startDate.getMonth() + 1);
-
-      console.log(targetDate);
 
       const monthName = new Intl.DateTimeFormat("en-US", {
         month: "long",
@@ -321,8 +316,6 @@ export const getLessonsCountChartData = async (req, res) => {
         },
       });
 
-      console.log(studentsCount, "aaaaaaa");
-
       months.push({
         month: monthName,
         year: targetYear,
@@ -331,9 +324,6 @@ export const getLessonsCountChartData = async (req, res) => {
 
       targetDate.startDate.setMonth(targetDate.startDate.getMonth() + 1);
     }
-
-    console.log(months);
-    console.log(studentsCountList);
 
     res.status(200).json({ months, values: studentsCountList });
   } catch (err) {
@@ -346,6 +336,46 @@ export const getLessonsCountChartData = async (req, res) => {
       user: req.user,
       functionName: getLessonsCountChartData.name,
     });
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const getWeeklyGroupTable = async (req, res) => {
+  try {
+    const groups = await Group.find({
+      status: "current",
+    }).select("-teachers -mentors -students");
+
+    const result = groups
+      .reduce((list, group) => {
+        const newList = [...list];
+        group.lessonDate.forEach((dateItem) => {
+          const targetListItem = newList.find(
+            (listItem) => listItem.time === dateItem.time
+          );
+
+          if (targetListItem) {
+            targetListItem.groups.push(group);
+          } else {
+            newList.push({
+              time: dateItem.time,
+              groups: [group],
+            });
+          }
+        });
+
+        return newList;
+      }, [])
+      .sort((a, b) => {
+        const timeA = new Date(`1970-01-01T${a.time}`);
+        const timeB = new Date(`1970-01-01T${b.time}`);
+
+        return timeA - timeB;
+      });
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
