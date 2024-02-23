@@ -349,3 +349,46 @@ export const getLessonsCountChartData = async (req, res) => {
     res.status(500).json({ message: { error: err.message } });
   }
 };
+
+export const getWeeklyGroupTable = async (req, res) => {
+  try {
+    const groups = await Group.find({
+      status: "current",
+    }).select("-teachers -mentors -students");
+
+
+    const result = groups
+      .reduce((list, group) => {
+        const newList = [...list];
+        group.lessonDate.forEach((dateItem) => {
+          const targetListItem = newList.find(
+            (listItem) => listItem.time === dateItem.time
+          );
+
+          if (targetListItem) {
+            targetListItem.groups.push(group);
+          } else {
+            newList.push({
+              time: dateItem.time,
+              groups: [group],
+            });
+          }
+        });
+
+        return newList;
+      }, [])
+      .sort((a, b) => {
+        const timeA = new Date(`1970-01-01T${a.time}`);
+        const timeB = new Date(`1970-01-01T${b.time}`);
+
+        return timeA - timeB;
+      });
+
+      console.log(result)
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
