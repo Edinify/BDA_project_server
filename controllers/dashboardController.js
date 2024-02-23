@@ -74,7 +74,6 @@ export const getConsultationsData = async (req, res) => {
       },
     ]);
 
-    console.log(leadsCount);
     const plansCount = await Consultation.countDocuments();
     const consultationsCount = await Consultation.countDocuments({
       status: { $ne: "appointed" },
@@ -299,14 +298,10 @@ export const getLessonsCountChartData = async (req, res) => {
 
     const test = await Student.find();
 
-    console.log(test);
-
     while (targetDate.startDate <= targetDate.endDate) {
       const targetYear = targetDate.startDate.getFullYear();
       const currentDate = new Date(targetDate.startDate);
       currentDate.setMonth(targetDate.startDate.getMonth() + 1);
-
-      console.log(targetDate);
 
       const monthName = new Intl.DateTimeFormat("en-US", {
         month: "long",
@@ -321,8 +316,6 @@ export const getLessonsCountChartData = async (req, res) => {
         },
       });
 
-      console.log(studentsCount, "aaaaaaa");
-
       months.push({
         month: monthName,
         year: targetYear,
@@ -331,9 +324,6 @@ export const getLessonsCountChartData = async (req, res) => {
 
       targetDate.startDate.setMonth(targetDate.startDate.getMonth() + 1);
     }
-
-    console.log(months);
-    console.log(studentsCountList);
 
     res.status(200).json({ months, values: studentsCountList });
   } catch (err) {
@@ -355,7 +345,6 @@ export const getWeeklyGroupTable = async (req, res) => {
     const groups = await Group.find({
       status: "current",
     }).select("-teachers -mentors -students");
-
 
     const result = groups
       .reduce((list, group) => {
@@ -384,11 +373,9 @@ export const getWeeklyGroupTable = async (req, res) => {
         return timeA - timeB;
       });
 
-      console.log(result)
-
     res.status(200).json(result);
   } catch (err) {
-    console.log(err)
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
