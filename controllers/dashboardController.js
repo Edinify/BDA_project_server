@@ -355,7 +355,13 @@ export const getWeeklyGroupTable = async (req, res) => {
           );
 
           if (targetListItem) {
-            targetListItem.groups.push(group);
+            const checkExistGroup = targetListItem.groups.find(
+              (item) => item._id === group._id
+            );
+
+            if (!checkExistGroup) {
+              targetListItem.groups.push(group);
+            }
           } else {
             newList.push({
               time: dateItem.time,
