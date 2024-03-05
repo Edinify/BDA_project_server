@@ -11,6 +11,7 @@ import mongoose from "mongoose";
 export const createStudent = async (req, res) => {
   try {
     const newStudent = new Student(req.body);
+
     await newStudent.save();
 
     const groupsIds = newStudent.groups.map((item) => item?.group);
@@ -27,10 +28,15 @@ export const createStudent = async (req, res) => {
       { $push: { students: { student: newStudent._id } } }
     );
 
-    const studentsCount = await Student.countDocuments({ deleted: false });
-    const lastPage = Math.ceil(studentsCount / 10);
+    const student = await Student.findById(newStudent._id).populate({
+      path: "groups.group",
+      populate: {
+        path: "course",
+        model: "Course",
+      },
+    });
 
-    res.status(201).json({ student: newStudent, lastPage });
+    res.status(201).json(student);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
@@ -88,12 +94,11 @@ export const getActiveStudents = async (req, res) => {
 
 // Get students for pagination
 export const getStudentsForPagination = async (req, res) => {
-  const { searchQuery, status, courseId, groupId } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, status, courseId, groupId, length } = req.query;
   const limit = 10;
 
   try {
-    let totalPages;
+    let totalLength;
     let students;
     let filterObj = {};
 
@@ -119,7 +124,7 @@ export const getStudentsForPagination = async (req, res) => {
         deleted: false,
         ...filterObj,
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .populate("courses")
         .populate({
@@ -128,17 +133,18 @@ export const getStudentsForPagination = async (req, res) => {
             path: "course",
             model: "Course",
           },
-        });
+        })
+        .sort({ createdAt: -1 });
 
-      totalPages = Math.ceil(studentsCount / limit);
+      totalLength = studentsCount;
     } else {
       const studentsCount = await Student.countDocuments({
         deleted: false,
         ...filterObj,
       });
-      totalPages = Math.ceil(studentsCount / limit);
+      totalLength = studentsCount;
       students = await Student.find({ deleted: false, ...filterObj })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .populate("courses")
         .populate({
@@ -147,8 +153,10 @@ export const getStudentsForPagination = async (req, res) => {
             path: "course",
             model: "Course",
           },
-        });
+        })
+        .sort({ createdAt: -1 });
     }
+    console.log(students);
 
     students = await Promise.all(
       students.map(async (student) => {
@@ -165,13 +173,15 @@ export const getStudentsForPagination = async (req, res) => {
 
         const result = await targetLessons.exec();
 
+        // console.log(result);
+
         return { ...student.toObject(), qbCount: result[0]?.count || 0 };
       })
     );
 
-    console.log(students);
+    // console.log(totalLength, students);
 
-    res.status(200).json({ students, totalPages });
+    res.status(200).json({ students, totalLength });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

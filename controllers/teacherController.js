@@ -266,8 +266,11 @@ export const updateTeacher = async (req, res) => {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
+    console.log(updatedTeacher, "updated teacher");
+
     res.status(200).json({ ...updatedTeacher.toObject(), password: "" });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };

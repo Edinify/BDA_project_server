@@ -9,6 +9,7 @@ import {
   getGroups,
   getGroupsForPagination,
   getGroupsWithCourseId,
+  getGroupsWithMentorId,
   getGroupsWithTeacherId,
   updateGroup,
 } from "../controllers/groupController.js";
@@ -18,6 +19,7 @@ const router = express.Router();
 
 router.get("/all", getGroups);
 router.get("/with-teacher", getGroupsWithTeacherId);
+router.get("/with-mentor", getGroupsWithMentorId);
 router.get("/with-course", getGroupsWithCourseId);
 router.get("/pagination", getGroupsForPagination);
 router.post("/", createGroup);

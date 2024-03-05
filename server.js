@@ -48,8 +48,6 @@ import { getWeeklyGroupTable } from "./controllers/dashboardController.js";
 
 dotenv.config();
 
-
-
 const app = express();
 const port = process.env.PORT;
 const uri = process.env.DB_URI;
@@ -97,9 +95,6 @@ app.get("/", (req, res) => {
   res.send("hello");
 });
 
-
-
-
 // wbm.start().then(async () => {
 //   const phones = ['123456'];
 //   const message = 'Good Morning.';
@@ -145,86 +140,6 @@ const connectToDatabase = async (uri, port) => {
     console.log("Connected to the database");
     app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
-
-      // getWeeklyGroupTable()
-
-      // const endOfDay = new Date();
-
-      // const test = await Student.aggregate([
-      //   {
-      //     $project: {
-      //       fullName: 1,
-      //       groups: 1,
-      //     },
-      //   },
-      //   {
-      //     $addFields: {
-      //       totalPayments: {
-      //         $sum: {
-      //           $map: {
-      //             input: "$groups",
-      //             as: "group",
-      //             in: {
-      //               $sum: {
-      //                 $map: {
-      //                   input: "$$group.payments",
-      //                   as: "payment",
-      //                   in: {
-      //                     $cond: [
-      //                       { $lte: ["$$payment.paymentDate", endOfDay] },
-      //                       "$$payment.payment",
-      //                       0,
-      //                     ],
-      //                   },
-      //                 },
-      //               },
-      //             },
-      //           },
-      //         },
-      //       },
-      //       totalPaids: {
-      //         $sum: {
-      //           $map: {
-      //             input: "$groups",
-      //             as: "group",
-      //             in: {
-      //               $ifNull: [
-      //                 {
-      //                   $sum: {
-      //                     $map: {
-      //                       input: {
-      //                         $filter: {
-      //                           input: "$$group.paids",
-      //                           as: "paid",
-      //                           cond: { $eq: ["$$paid.confirmed", true] },
-      //                         },
-      //                       },
-      //                       as: "paid",
-      //                       in: "$$paid.payment",
-      //                     },
-      //                   },
-      //                 },
-      //                 0,
-      //               ],
-      //             },
-      //           },
-      //         },
-      //       },
-      //     },
-      //   },
-      //   {
-      //     $addFields: {
-      //       balance: { $subtract: ["$totalPayments", "$totalPaids"] },
-      //     },
-      //   },
-      //   {
-      //     $match: {
-      //       balance: { $gt: 0 },
-      //     },
-      //   },
-      // ]);
-
-      // console.log(test);
     });
   } else {
     console.error("Failed to connect to the database after multiple attempts");

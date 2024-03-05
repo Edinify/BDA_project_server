@@ -53,7 +53,7 @@ export const registerSuperAdmin = async (req, res) => {
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  console.log(req.body)
+  console.log(req.body);
   try {
     const regexEmail = new RegExp(email, "i");
 
@@ -88,21 +88,11 @@ export const login = async (req, res) => {
       secure: true,
     });
 
-
     res.status(200).json({
       AccessToken: AccessToken,
       RefreshToken: RefreshToken,
     });
   } catch (err) {
-    logger.error({
-      method: "POST",
-      status: 500,
-      message: err.message,
-      for: "LOGIN",
-      postedData: req.body,
-      functionName: login.name,
-    });
-
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -376,12 +366,12 @@ const revokeTokenFromDatabase = async (refreshToken) => {
 // Get user
 export const getUser = async (req, res) => {
   const { id, role } = req.user;
-  console.log(id, role)
+  console.log(id, role);
   try {
     let user;
     if (role === "super-admin") {
       user = await Admin.findById(id);
-    } else if (role === "teacher") {
+    } else if (role === "teacher" || role === "mentor") {
       user = await Teacher.findById(id);
     } else if (role === "worker") {
       user = await Worker.findById(id);
