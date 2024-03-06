@@ -129,8 +129,15 @@ export const getCoursesStatistics = async (req, res) => {
 export const getAdvertisingStatistics = async (req, res) => {
   const { monthCount, startDate, endDate } = req.query;
   const targetDate = calcDate(monthCount, startDate, endDate);
+
   try {
-    const studentsCount = await Student.countDocuments();
+    const filterObj = {
+      createdAt: {
+        $gte: targetDate.startDate,
+        $lte: targetDate.endDate,
+      },
+    };
+    const studentsCount = await Student.countDocuments(filterObj);
 
     const advertisings = [
       { name: "İnstagram Sponsorlu", key: "instagramSponsor" },
@@ -151,6 +158,7 @@ export const getAdvertisingStatistics = async (req, res) => {
 
     const advertisingStatistics = await Student.aggregate([
       { $unwind: "$whereComing" },
+      { $match: filterObj },
       {
         $group: {
           _id: "$whereComing",
@@ -184,15 +192,6 @@ export const getAdvertisingStatistics = async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      query: req.query,
-      for: "GET ADVERTISING STATISTICS FOR DASHBOARD",
-      user: req.user,
-      functionName: getAdvertisingStatistics.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };
