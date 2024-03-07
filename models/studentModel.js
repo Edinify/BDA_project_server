@@ -139,4 +139,6 @@ const studentSchema = new Schema(
   { timestamps: true }
 );
 
+studentSchema.index({ createdAt: 1 });
+
 export const Student = mongoose.model("Student", studentSchema);

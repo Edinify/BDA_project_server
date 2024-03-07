@@ -4,29 +4,27 @@ import { v4 as uuidv4 } from "uuid";
 
 // Get careers
 export const getCareers = async (req, res) => {
-  const { startDate, endDate, searchQuery } = req.query;
+  const { searchQuery, courseId, groupId } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = 10;
 
-  console.log(req.query, "kkkkkkkkkk", page);
-
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
-    let targetDate;
+    const filterObj = {};
 
-    if (startDate && endDate) {
-      targetDate = calcDate(null, startDate, endDate);
-    } else {
-      targetDate = calcDate(1);
-    }
+    if (courseId) filterObj.courses = courseId;
+
+    if (groupId) filterObj["groups.group"] = groupId;
 
     const studentsCount = await Student.countDocuments({
       fullName: { $regex: regexSearchQuery },
+      ...filterObj,
     });
     const totalPages = Math.ceil(studentsCount / limit);
 
     const students = await Student.find({
       fullName: { $regex: regexSearchQuery },
+      ...filterObj,
     })
       .skip((page - 1) * limit)
       .limit(limit)
