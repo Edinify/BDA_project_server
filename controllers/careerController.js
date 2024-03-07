@@ -1,4 +1,3 @@
-import { calcDate } from "../calculate/calculateDate.js";
 import { Student } from "../models/studentModel.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -10,22 +9,19 @@ export const getCareers = async (req, res) => {
 
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
-    const filterObj = {};
+    const filterObj = {
+      fullName: { $regex: regexSearchQuery },
+      "groups.0": { $exists: true },
+    };
 
     if (courseId) filterObj.courses = courseId;
 
     if (groupId) filterObj["groups.group"] = groupId;
 
-    const studentsCount = await Student.countDocuments({
-      fullName: { $regex: regexSearchQuery },
-      ...filterObj,
-    });
+    const studentsCount = await Student.countDocuments(filterObj);
     const totalPages = Math.ceil(studentsCount / limit);
 
-    const students = await Student.find({
-      fullName: { $regex: regexSearchQuery },
-      ...filterObj,
-    })
+    const students = await Student.find(filterObj)
       .skip((page - 1) * limit)
       .limit(limit)
       .populate({
