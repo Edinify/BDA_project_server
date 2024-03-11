@@ -159,16 +159,6 @@ export const updateAdminPassword = async (req, res) => {
 
     res.status(200).json(updatedAdmin);
   } catch (err) {
-    logger.error({
-      method: "PATCH",
-      status: 500,
-      message: err.message,
-      for: "UPDATE ADMIN PASSWORD",
-      user: req.user,
-      updatedAdmin: id,
-      functionName: deleteAdmin.name,
-    });
-
     res.status(500).json({ message: { error: err.message } });
   }
 };

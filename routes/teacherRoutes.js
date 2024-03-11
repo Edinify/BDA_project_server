@@ -37,7 +37,7 @@ router.get("/checked", getCheckedTeachers);
 router.get("/pagination", getTeachersForPagination);
 router.patch("/:id", authMiddleware, updateTeacher);
 router.delete("/:id", deleteTeacher);
-router.patch("/own/password", updateTeacherPassword);
+router.patch("/own/password", authMiddleware, updateTeacherPassword);
 router.get("/me/chart", authMiddleware, checkTeacher, getTeacherChartData);
 router.get(
   "/me/confirmed-lessons",

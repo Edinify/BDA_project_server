@@ -8,11 +8,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import {
-  createNotificationForBirthdayAtCreateAndUpdateStudent,
-  createNotificationForLessonsCount,
-  createNotificationForOneStudentLessonsCount,
-} from "./notificationController.js";
 import logger from "../config/logger.js";
 
 dotenv.config();

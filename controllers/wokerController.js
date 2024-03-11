@@ -153,7 +153,6 @@ export const updateWorkerOwnPassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const { id } = req.user;
 
-  console.log(id, "worker id");
   try {
     const worker = await Worker.findById(id);
 
