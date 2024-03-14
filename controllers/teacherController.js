@@ -39,15 +39,7 @@ export const createTeacher = async (req, res) => {
     await teacher.populate("courses");
     await teacher.save();
 
-    const teachersCount = await Teacher.countDocuments({
-      deleted: false,
-      role: teacher.role,
-    });
-    const lastPage = Math.ceil(teachersCount / 10);
-
-    res
-      .status(201)
-      .json({ teacher: { ...teacher.toObject(), password: "" }, lastPage });
+    res.status(201).json({ ...teacher.toObject(), password: "" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
@@ -140,13 +132,12 @@ export const getCheckedTeachers = async (req, res) => {
 
 // Get teacher for pagination
 export const getTeachersForPagination = async (req, res) => {
-  const { searchQuery, status, role, courseId } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, status, role, courseId, length } = req.query;
   const limit = 10;
 
   console.log(req.query);
   try {
-    let totalPages;
+    let totalLength;
     let teachers;
     let filterObj = {
       role,
@@ -174,20 +165,22 @@ export const getTeachersForPagination = async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses");
+        .populate("courses")
+        .sort({ createdAt: -1 });
 
-      totalPages = Math.ceil(teachersCount / limit);
+      totalLength = teachersCount;
     } else {
       const teachersCount = await Teacher.countDocuments({
         deleted: false,
         ...filterObj,
       });
-      totalPages = Math.ceil(teachersCount / limit);
+      totalLength = teachersCount;
 
       teachers = await Teacher.find({ deleted: false, ...filterObj })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("courses");
+        .populate("courses")
+        .sort({ createdAt: -1 });
     }
 
     const teacherList = teachers.map((teacher) => ({
@@ -195,7 +188,7 @@ export const getTeachersForPagination = async (req, res) => {
       password: "",
     }));
 
-    res.status(200).json({ teachers: teacherList, totalPages });
+    res.status(200).json({ teachers: teacherList, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -265,8 +258,6 @@ export const updateTeacher = async (req, res) => {
     if (!updatedTeacher) {
       return res.status(404).json({ message: "Teacher not found" });
     }
-
-    console.log(updatedTeacher, "updated teacher");
 
     res.status(200).json({ ...updatedTeacher.toObject(), password: "" });
   } catch (err) {

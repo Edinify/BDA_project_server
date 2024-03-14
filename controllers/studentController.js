@@ -156,7 +156,6 @@ export const getStudentsForPagination = async (req, res) => {
         })
         .sort({ createdAt: -1 });
     }
-    console.log(students);
 
     students = await Promise.all(
       students.map(async (student) => {
@@ -173,13 +172,9 @@ export const getStudentsForPagination = async (req, res) => {
 
         const result = await targetLessons.exec();
 
-        // console.log(result);
-
         return { ...student.toObject(), qbCount: result[0]?.count || 0 };
       })
     );
-
-    // console.log(totalLength, students);
 
     res.status(200).json({ students, totalLength });
   } catch (err) {
@@ -378,9 +373,13 @@ export const deleteStudent = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deletedStudent = await Student.findByIdAndUpdate(id, {
-      deleted: true,
-    });
+    const deletedStudent = await Student.findByIdAndUpdate(
+      id,
+      {
+        deleted: true,
+      },
+      { new: true }
+    );
 
     if (!deletedStudent) {
       return res.status(404).json({ key: "student-not-found" });
