@@ -56,4 +56,6 @@ const teacherSchema = new Schema(
   { timestamps: true }
 );
 
+teacherSchema.index({ createdAt: 1 });
+
 export const Teacher = mongoose.model("Teacher", teacherSchema);

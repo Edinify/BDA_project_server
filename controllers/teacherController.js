@@ -135,7 +135,7 @@ export const getTeachersForPagination = async (req, res) => {
   const { searchQuery, status, role, courseId, length } = req.query;
   const limit = 10;
 
-  console.log(req.query);
+  console.log(page);
   try {
     let totalLength;
     let teachers;
@@ -163,7 +163,7 @@ export const getTeachersForPagination = async (req, res) => {
         deleted: false,
         ...filterObj,
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .populate("courses")
         .sort({ createdAt: -1 });
@@ -177,7 +177,7 @@ export const getTeachersForPagination = async (req, res) => {
       totalLength = teachersCount;
 
       teachers = await Teacher.find({ deleted: false, ...filterObj })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .populate("courses")
         .sort({ createdAt: -1 });
