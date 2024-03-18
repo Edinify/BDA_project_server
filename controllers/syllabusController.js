@@ -17,13 +17,13 @@ export const getSyllabus = async (req, res) => {
 
 // Get syllabus for pagination
 export const getSyllabusForPagination = async (req, res) => {
-  const { searchQuery, courseId } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, courseId,length } = req.query;
+  // const page = parseInt(req.query.page) || 1;
   const limit = 10;
-
+  // console.log(searchQuery, courseId,length)
   try {
-    let totalPages;
-    let syllabus;
+    let totalLength;
+    let syllabusData;
 
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");
@@ -33,25 +33,25 @@ export const getSyllabusForPagination = async (req, res) => {
         courseId,
       });
 
-      syllabus = await Syllabus.find({
+      syllabusData = await Syllabus.find({
         name: { $regex: regexSearchQuery },
         courseId,
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .sort({ orderNumber: 1 });
 
-      totalPages = Math.ceil(syllabusCount / limit);
+      totalLength = syllabusCount;
     } else {
       const syllabusCount = await Syllabus.countDocuments({ courseId });
-      totalPages = Math.ceil(syllabusCount / limit);
-      syllabus = await Syllabus.find({ courseId })
-        .skip((page - 1) * limit)
+      totalLength = syllabusCount;
+      syllabusData = await Syllabus.find({ courseId })
+        .skip(length || 0)
         .sort({ orderNumber: 1 })
         .limit(limit);
     }
-
-    res.status(200).json({ syllabus, totalPages });
+    console.log(syllabusData, totalLength)
+    res.status(200).json({ syllabusData, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -67,7 +67,6 @@ export const createSyllabus = async (req, res) => {
       courseId,
     });
 
-    console.log(existingSyllabus, "existingSyllabus");
 
     if (existingSyllabus) {
       return res.status(409).json({ key: "syllabus-already-exists" });
@@ -78,8 +77,8 @@ export const createSyllabus = async (req, res) => {
 
     const syllabusCount = await Syllabus.countDocuments({ courseId });
     const lastPage = Math.ceil(syllabusCount / 10);
-
-    res.status(201).json({ syllabus: newSyllabus, lastPage });
+    console.log(newSyllabus)
+    res.status(201).json(newSyllabus);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });

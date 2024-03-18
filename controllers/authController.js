@@ -48,7 +48,7 @@ export const registerSuperAdmin = async (req, res) => {
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
   try {
     const regexEmail = new RegExp(email, "i");
 
@@ -58,7 +58,7 @@ export const login = async (req, res) => {
 
     const user = admin || worker || teacher;
 
-    console.log(user, "user in login");
+    // console.log(user, "user in login");
     if (!user) {
       return res.status(404).json({ key: "user-not-found" });
     }
@@ -66,7 +66,7 @@ export const login = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      console.log("errrrroorro");
+      // console.log("errrrroorro");
       return res.status(404).json({ key: "invalid-password" });
     }
 
@@ -132,7 +132,7 @@ export const sendCodeToEmail = async (req, res) => {
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.log(error);
+        // console.log(error);
         return res.status(500).json({ error: error });
       } else {
         res.status(200).json({ message: "Code sent successfuly" });
@@ -302,12 +302,12 @@ const createRefreshToken = (user) => {
 
 // verify refresh token
 export const refreshToken = async (req, res) => {
-  // console.log(req.headers,'header')
+  //  console.log(req.headers,'header')
   try {
     const rf_token = req.headers.cookie.split("=")[1];
-    // console.log(rf_token);
+    //  console.log(rf_token);
     const token = await Token.findOne({ refreshToken: rf_token });
-    // console.log(token,'db');
+    //  console.log(token,'db');
     if (token) {
       jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) {
@@ -317,11 +317,11 @@ export const refreshToken = async (req, res) => {
             sameSite: "None",
             secure: true,
           });
-          console.log(err.message);
+          // console.log(err.message);
           revokeTokenFromDatabase(rf_token);
           return res.status(401).json({ message: { error: err.message } });
         } else {
-          console.log(user, "new acces ");
+          // console.log(user, "new acces ");
           const accesstoken = createAccessToken({
             email: user.mail,
             _id: user.id,
@@ -361,7 +361,7 @@ const revokeTokenFromDatabase = async (refreshToken) => {
 // Get user
 export const getUser = async (req, res) => {
   const { id, role } = req.user;
-  console.log(id, role);
+  // console.log(id, role);
   try {
     let user;
     if (role === "super-admin") {

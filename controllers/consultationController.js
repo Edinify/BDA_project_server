@@ -4,12 +4,11 @@ import { Worker } from "../models/workerModel.js";
 
 // Get consultations for pagination
 export const getConsultationsForPagination = async (req, res) => {
-  const { searchQuery, status } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, status, length} = req.query;
   const limit = 10;
-
+  console.log(length)
   try {
-    let totalPages;
+    let totalLength;
     let consultations;
     let filterObj = {};
 
@@ -33,21 +32,20 @@ export const getConsultationsForPagination = async (req, res) => {
         ...filterObj,
         studentName: { $regex: regexSearchQuery },
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .populate("course teacher");
 
-      totalPages = Math.ceil(consultationsCount / limit);
+      totalLength = consultationsCount
     } else {
       const consultationsCount = await Consultation.countDocuments(filterObj);
-      totalPages = Math.ceil(consultationsCount / limit);
+      totalLength = consultationsCount
       consultations = await Consultation.find(filterObj)
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .populate("course teacher");
     }
-
-    res.status(200).json({ consultations, totalPages });
+    res.status(200).json({ consultations, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -62,8 +60,7 @@ export const createConsultation = async (req, res) => {
 
     const consultationCount = await Consultation.countDocuments();
     const lastPage = Math.ceil(consultationCount / 10);
-
-    res.status(201).json({ consultation: newConsultation, lastPage });
+    res.status(201).json(newConsultation);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

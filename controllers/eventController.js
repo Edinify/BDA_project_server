@@ -2,12 +2,11 @@ import { Event } from "../models/eventModel.js";
 
 // Get events for pagination
 export const getEventsForPagination = async (req, res) => {
-  const { searchQuery } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery,length } = req.query;
   const limit = 10;
 
   try {
-    let totalPages;
+    let totalLength;
     let events;
 
     if (searchQuery && searchQuery.trim() !== "") {
@@ -20,19 +19,19 @@ export const getEventsForPagination = async (req, res) => {
       events = await Event.find({
         eventName: { $regex: regexSearchQuery },
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit);
 
-      totalPages = Math.ceil(eventsCount / limit);
+      totalLength = eventsCount
     } else {
       const eventsCount = await Event.countDocuments();
-      totalPages = Math.ceil(eventsCount / limit);
+      totalLength = eventsCount
       events = await Event.find()
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit);
     }
 
-    res.status(200).json({ events, totalPages });
+    res.status(200).json({ events, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -47,7 +46,7 @@ export const createEvent = async (req, res) => {
     const eventsCount = await Event.countDocuments();
     const lastPage = Math.ceil(eventsCount / 10);
 
-    res.status(201).json({ event: newEvent, lastPage });
+    res.status(201).json(newEvent);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

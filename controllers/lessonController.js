@@ -283,7 +283,6 @@ export const getLessons = async (req, res) => {
 //   startDate.setDate(startDate.getDate() + 1);
 // }
 
-// console.log(dates);
 
 // Update lesson
 export const updateLesson = async (req, res) => {
