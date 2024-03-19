@@ -1,15 +1,10 @@
 import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
-import { Course } from "../models/courseModel.js";
 import { Lead } from "../models/leadModal.js";
-import { Worker } from "../models/workerModel.js";
 
 // Get leads for pagination
 export const getLeadsForPagination = async (req, res) => {
-  const { monthCount, startDate, endDate } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { monthCount, startDate, endDate, length } = req.query;
   const limit = 10;
-
-  console.log(req.query, "yyyyyyyyyyyyyyyyyyyyyyyy");
 
   try {
     let targetDate;
@@ -20,25 +15,17 @@ export const getLeadsForPagination = async (req, res) => {
       targetDate = calcDateWithMonthly(startDate, endDate);
     }
 
-    const leadsCount = await Lead.countDocuments({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
-    let totalPages = Math.ceil(leadsCount / limit);
-
     const leads = await Lead.find({
       date: {
         $gte: targetDate.startDate,
         $lte: targetDate.endDate,
       },
     })
-      .skip((page - 1) * limit)
+      .skip(length || 0)
       .limit(limit)
-      .sort({ date: 1 });
+      .sort({ date: -1 });
 
-    res.status(200).json({ leads, totalPages });
+    res.status(200).json({ leads });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -47,20 +34,10 @@ export const getLeadsForPagination = async (req, res) => {
 // Create lead
 export const createLead = async (req, res) => {
   try {
-    const targetDate = calcDate(1);
-
     const newLead = new Lead(req.body);
     await newLead.save();
 
-    const leadsCount = await Lead.countDocuments({
-      date: {
-        $gte: targetDate.startDate,
-        $lte: targetDate.endDate,
-      },
-    });
-    const lastPage = Math.ceil(leadsCount / 10);
-
-    res.status(201).json({ lead: newLead, lastPage });
+    res.status(201).json(newLead);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -87,13 +87,13 @@ export const getGroupsWithMentorId = async (req, res) => {
 
 // Get groups for pagination
 export const getGroupsForPagination = async (req, res) => {
-  const { searchQuery, status, courseId, teacherId, mentorId } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { length, searchQuery, status, courseId, teacherId, mentorId } =
+    req.query;
   const limit = 10;
 
   try {
-    let totalPages;
-    let groups;
+    let totalLength;
+    let groupData;
     const filterObj = { status };
 
     if (courseId) filterObj.course = courseId;
@@ -110,25 +110,27 @@ export const getGroupsForPagination = async (req, res) => {
         ...filterObj,
       });
 
-      groups = await Group.find({
+      groupData = await Group.find({
         name: { $regex: regexSearchQuery },
         ...filterObj,
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
+        .sort({ createdAt: -1 })
         .populate("teachers students course mentors");
 
-      totalPages = Math.ceil(groupsCount / limit);
+      totalLength = groupsCount;
     } else {
       const groupsCount = await Group.countDocuments(filterObj);
-      totalPages = Math.ceil(groupsCount / limit);
-      groups = await Group.find(filterObj)
-        .skip((page - 1) * limit)
+      totalLength = groupsCount;
+      groupData = await Group.find(filterObj)
+        .skip(length || 0)
         .limit(limit)
+        .sort({ createdAt: -1 })
         .populate("teachers students course mentors");
     }
 
-    res.status(200).json({ groups, totalPages });
+    res.status(200).json({ groupData, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -150,6 +152,7 @@ export const createGroup = async (req, res) => {
     }
 
     const newGroup = new Group(req.body);
+    await newGroup.populate("teachers students course mentors");
     await newGroup.save();
 
     createLessons(newGroup);
@@ -159,10 +162,7 @@ export const createGroup = async (req, res) => {
       { $push: { groups: { group: newGroup._id } } }
     );
 
-    const groupsCount = await Group.countDocuments();
-    const lastPage = Math.ceil(groupsCount / 10);
-
-    res.status(201).json({ group: newGroup, lastPage });
+    res.status(201).json(newGroup);
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });

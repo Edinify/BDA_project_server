@@ -9,6 +9,7 @@ import {
   createStudent,
   confirmStudentChanges,
   cancelStudentChanges,
+  exportStudentContract,
 } from "../controllers/studentController.js";
 import { authMiddleware, checkAdminAndSuperAdmin } from "../middleware/auth.js";
 
@@ -24,6 +25,7 @@ router.get(
   getStudentsByCourseId
 );
 router.get("/active", getActiveStudents);
+router.get("/contract", exportStudentContract);
 router.patch("/:id", authMiddleware, updateStudent);
 router.patch("/changes/confirm/:id", authMiddleware, confirmStudentChanges);
 router.patch("/changes/cancel/:id", authMiddleware, cancelStudentChanges);

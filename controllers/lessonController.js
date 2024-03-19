@@ -1,9 +1,9 @@
 import logger from "../config/logger.js";
 import { Lesson } from "../models/lessonModel.js";
-import { Teacher } from "../models/teacherModel.js";
 import { calcDate } from "../calculate/calculateDate.js";
 import { Syllabus } from "../models/syllabusModel.js";
 import { Worker } from "../models/workerModel.js";
+import { Student } from "../models/studentModel.js";
 
 // Create lesson
 export const createLesson = async (req, res) => {
@@ -18,21 +18,20 @@ export const createLesson = async (req, res) => {
       day: day == 0 ? 7 : day,
     });
 
-    // await newLesson
-    //   .populate("teacher")
-    //   .populate({ path: "students.student", select: "-groups" })
-    //   .populate({
-    //     path: "group",
-    //     populate: {
-    //       path: "course",
-    //       model: "Course",
-    //     },
-    //   });
-
     await newLesson.save();
 
-    console.log(newLesson);
-    res.status(201).json(newLesson);
+    const lesson = await Lesson.findById(newLesson._id)
+      .populate("teacher mentor")
+      .populate({ path: "students.student", select: "-groups" })
+      .populate({
+        path: "group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      });
+
+    res.status(201).json(lesson);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
@@ -159,8 +158,7 @@ export const createLessons = async (group) => {
 };
 
 export const getLessons = async (req, res) => {
-  const { groupId, startDate, endDate, status } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { length, groupId, startDate, endDate, status } = req.query;
   const limit = 10;
 
   try {
@@ -184,10 +182,20 @@ export const getLessons = async (req, res) => {
       filterObj.status = status;
     }
 
-    const lessonsCount = await Lesson.countDocuments(filterObj);
+    const confirmedCount = await Lesson.countDocuments({
+      group: groupId,
+      status: "confirmed",
+    });
+    const cancelledCount = await Lesson.countDocuments({
+      group: groupId,
+      status: "cancelled",
+    });
+    const unviewedCount = await Lesson.countDocuments({
+      group: groupId,
+      status: "unviewed",
+    });
 
-    const totalPages = Math.ceil(lessonsCount / limit);
-    const skip = (page - 1) * limit;
+    const skip = length || 0;
 
     const lessons = await Lesson.find(filterObj)
       .skip(skip)
@@ -203,7 +211,15 @@ export const getLessons = async (req, res) => {
         },
       });
 
-    res.status(200).json({ lessons, totalPages });
+    console.log(lessons);
+    console.log(length);
+
+    res.status(200).json({
+      lessons,
+      confirmedCount,
+      cancelledCount,
+      unviewedCount,
+    });
   } catch (err) {
     console.log(err, "lesson error");
     res.status(500).json({ message: { error: err.message } });
@@ -283,8 +299,6 @@ export const getLessons = async (req, res) => {
 //   startDate.setDate(startDate.getDate() + 1);
 // }
 
-// console.log(dates);
-
 // Update lesson
 export const updateLesson = async (req, res) => {
   const { id } = req.params;
@@ -327,11 +341,29 @@ export const updateLesson = async (req, res) => {
       new: true,
     }).populate("teacher students.student group mentor");
 
+    const confirmedCount = await Lesson.countDocuments({
+      group: updatedLesson.group._id,
+      status: "confirmed",
+    });
+    const cancelledCount = await Lesson.countDocuments({
+      group: updatedLesson.group._id,
+      status: "cancelled",
+    });
+    const unviewedCount = await Lesson.countDocuments({
+      group: updatedLesson.group._id,
+      status: "unviewed",
+    });
+
     if (!updatedLesson) {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    res.status(200).json(updatedLesson);
+    res.status(200).json({
+      lesson: updatedLesson,
+      confirmedCount,
+      cancelledCount,
+      unviewedCount,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

@@ -31,11 +31,10 @@ export const createWorker = async (req, res) => {
     await worker.save();
 
     const workersCount = await Worker.countDocuments();
-    const lastPage = Math.ceil(workersCount / 10);
 
     res
       .status(201)
-      .json({ worker: { ...worker.toObject(), password: "" }, lastPage });
+      .json({ ...worker.toObject(), password: "" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -43,11 +42,11 @@ export const createWorker = async (req, res) => {
 
 // Get workers
 export const getWorkers = async (req, res) => {
-  const { searchQuery } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery,length } = req.query;
   const limit = 10;
 
   try {
+    let totalLength;
     let totalPages;
     let workers;
 
@@ -61,22 +60,22 @@ export const getWorkers = async (req, res) => {
       workers = await Worker.find({
         fullName: { $regex: regexSearchQuery },
       })
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .select("-password");
 
-      totalPages = Math.ceil(workersCount / limit);
+      totalLength = workersCount
     } else {
       const workersCount = await Worker.countDocuments();
-      totalPages = Math.ceil(workersCount / limit);
+      totalLength = workersCount
 
       workers = await Worker.find()
-        .skip((page - 1) * limit)
+        .skip(length || 0)
         .limit(limit)
         .select("-password");
     }
 
-    res.status(200).json({ workers, totalPages });
+    res.status(200).json({ workers, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }

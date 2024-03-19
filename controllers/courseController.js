@@ -23,12 +23,11 @@ export const getCourses = async (req, res) => {
 
 // Get courses for pagination
 export const getCoursesForPagination = async (req, res) => {
-  const { searchQuery } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, length } = req.query;
   const limit = 10;
 
   try {
-    let totalPages;
+    let totalLength;
     let courses;
 
     if (searchQuery && searchQuery.trim() !== "") {
@@ -41,28 +40,22 @@ export const getCoursesForPagination = async (req, res) => {
       courses = await Course.find({
         name: { $regex: regexSearchQuery },
       })
-        .skip((page - 1) * limit)
-        .limit(limit);
+        .skip(length || 0)
+        .limit(limit)
+        .sort({ createdAt: -1 });
 
-      totalPages = Math.ceil(coursesCount / limit);
+      totalLength = coursesCount;
     } else {
       const coursesCount = await Course.countDocuments();
-      totalPages = Math.ceil(coursesCount / limit);
+      totalLength = coursesCount;
       courses = await Course.find()
-        .skip((page - 1) * limit)
-        .limit(limit);
+        .skip(length || 0)
+        .limit(limit)
+        .sort({ createdAt: -1 });
     }
 
-    res.status(200).json({ courses, totalPages });
+    res.status(200).json({ courses, totalLength });
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      for: "GET COURSES FOR PAGINATION",
-      user: req.user,
-      functionName: getCoursesForPagination.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -85,20 +78,8 @@ export const createCourse = async (req, res) => {
     const newCourse = new Course(req.body);
     await newCourse.save();
 
-    const coursesCount = await Course.countDocuments();
-    const lastPage = Math.ceil(coursesCount / 10);
-
-    res.status(201).json({ course: newCourse, lastPage });
+    res.status(201).json(newCourse);
   } catch (err) {
-    logger.error({
-      method: "CREATE",
-      status: 500,
-      message: err.message,
-      for: "CREATE COURSE",
-      user: req.user,
-      postedData: req.body,
-      functionName: createCourse.name,
-    });
     res.status(500).json({ error: err.message });
   }
 };
@@ -148,17 +129,6 @@ export const updateCourse = async (req, res) => {
 
     res.status(200).json(updatedCourse);
   } catch (err) {
-    console.log(err);
-    logger.error({
-      method: "PATCH",
-      status: 500,
-      message: err.message,
-      for: "UPDATE COURSE",
-      user: req.user,
-      updatedData: req.body,
-      courseId: id,
-      functionName: updateCourse.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -176,15 +146,6 @@ export const deleteCourse = async (req, res) => {
 
     res.status(200).json(deletedCourse);
   } catch (err) {
-    logger.error({
-      method: "DELETE",
-      status: 500,
-      message: err.message,
-      for: "DELETE COURSE",
-      user: req.user,
-      courseId: id,
-      functionName: deleteCourse.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };

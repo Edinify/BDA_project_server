@@ -3,8 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 
 // Get careers
 export const getCareers = async (req, res) => {
-  const { searchQuery, courseId, groupId } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, courseId, groupId, length } = req.query;
   const limit = 10;
 
   try {
@@ -18,11 +17,8 @@ export const getCareers = async (req, res) => {
 
     if (groupId) filterObj["groups.group"] = groupId;
 
-    const studentsCount = await Student.countDocuments(filterObj);
-    const totalPages = Math.ceil(studentsCount / limit);
-
     const students = await Student.find(filterObj)
-      .skip((page - 1) * limit)
+      .skip(length || 0)
       .limit(limit)
       .populate({
         path: "groups.group",
@@ -44,7 +40,7 @@ export const getCareers = async (req, res) => {
       return [...list, ...career];
     }, []);
 
-    res.status(200).json({ careers, totalPages });
+    res.status(200).json({ careers, currentLength: +length + students.length });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -63,6 +59,8 @@ export const updateCareer = async (req, res) => {
     workStartDate,
     workStatus,
   } = req.body;
+
+  console.log(req.body, "career body");
 
   try {
     const student = await Student.findById(studentId);
@@ -90,7 +88,21 @@ export const updateCareer = async (req, res) => {
 
     await student.save();
 
-    res.status(200).json();
+    const targetGroup = student.groups.find(
+      (item) => item.group.toString() === group._id.toString()
+    );
+
+    res.status(200).json({
+      ...req.body,
+      portfolioLink: targetGroup.portfolioLink,
+      cvLink: targetGroup.cvLink,
+      currentWorkPlace: targetGroup.currentWorkPlace,
+      currentWorkPosition: targetGroup.currentWorkPosition,
+      previousWorkPlace: targetGroup.previousWorkPlace,
+      previousWorkPosition: targetGroup.previousWorkPosition,
+      workStartDate: targetGroup.workStartDate,
+      workStatus: targetGroup.workStatus,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

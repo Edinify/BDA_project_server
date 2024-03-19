@@ -1,3 +1,7 @@
+import fs from "fs/promises";
+import Docxtemplater from "docxtemplater";
+import path from "path";
+import PizZip from "pizzip";
 import { Lesson } from "../models/lessonModel.js";
 import { Student } from "../models/studentModel.js";
 import logger from "../config/logger.js";
@@ -6,6 +10,7 @@ import { Course } from "../models/courseModel.js";
 import { Worker } from "../models/workerModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import mongoose from "mongoose";
+import moment from "moment";
 
 // Create student
 export const createStudent = async (req, res) => {
@@ -156,7 +161,6 @@ export const getStudentsForPagination = async (req, res) => {
         })
         .sort({ createdAt: -1 });
     }
-    console.log(students);
 
     students = await Promise.all(
       students.map(async (student) => {
@@ -173,13 +177,9 @@ export const getStudentsForPagination = async (req, res) => {
 
         const result = await targetLessons.exec();
 
-        // console.log(result);
-
         return { ...student.toObject(), qbCount: result[0]?.count || 0 };
       })
     );
-
-    // console.log(totalLength, students);
 
     res.status(200).json({ students, totalLength });
   } catch (err) {
@@ -260,15 +260,6 @@ export const getStudentsByCourseId = async (req, res) => {
 
     res.status(200).json({ students: newStudents, totalLength });
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      query: req.query,
-      for: "GET STUDENTS BY COURSE ID",
-      user: req.user,
-      functionName: getStudentsByCourseId.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -378,9 +369,13 @@ export const deleteStudent = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deletedStudent = await Student.findByIdAndUpdate(id, {
-      deleted: true,
-    });
+    const deletedStudent = await Student.findByIdAndUpdate(
+      id,
+      {
+        deleted: true,
+      },
+      { new: true }
+    );
 
     if (!deletedStudent) {
       return res.status(404).json({ key: "student-not-found" });
@@ -478,6 +473,81 @@ export const cancelStudentChanges = async (req, res) => {
       });
 
     res.status(200).json(student);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Export word file
+
+export const exportStudentContract = async (req, res) => {
+  const { studentId, groupId } = req.query;
+
+  console.log("contract");
+  try {
+    const student = await Student.findById(studentId).populate({
+      path: "groups.group",
+      populate: {
+        path: "course",
+        model: "Course",
+      },
+    });
+    const group = student.groups.find(
+      (item) => item.group._id.toString() === groupId
+    );
+
+    const data = {
+      studentName: student?.fullName || "--",
+      contractDate: group?.contractStartDate
+        ? moment(group.contractStartDate).locale("az").format("DD.MM.YYYY")
+        : "--",
+      contractDateSecond: group?.contractStartDate
+        ? moment(group.contractStartDate)
+            .locale("az")
+            .format(`"DD" MMMM YYYY[-ci il]`)
+        : "--",
+      fin: student?.fin || "--",
+      seria: student?.seria || "--",
+      course: group?.group?.course?.name || "--",
+      totalAmount: group?.totalAmount || "--",
+      monthlyPayment: group?.payments[0]?.payment || "--",
+      paymentType: group?.payment?.paymentType || "--",
+      discount: group?.discount || "--",
+      phoneNumber: student?.phone || "--",
+    };
+
+    console.log(data);
+
+    const content = await fs.readFile(
+      path.resolve(process.cwd(), "templates", "student.docx"),
+      "binary"
+    );
+
+    const zip = new PizZip(content);
+
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    doc.render(data);
+
+    const buffer = doc.getZip().generate({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+    });
+
+    // Write the output document to a file
+    await fs.writeFile(
+      path.resolve(process.cwd(), "exports", "exported_document.docx"),
+      buffer
+    );
+
+    res.download(
+      path.resolve(process.cwd(), "exports", "exported_document.docx"),
+      "exported_document.docx"
+    );
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

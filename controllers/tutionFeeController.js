@@ -176,14 +176,14 @@ async function getPaymentsResults() {
 
 // get tution fees
 export const getTutionFees = async (req, res) => {
-  const { searchQuery, groupId, courseId, paymentStatus } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { searchQuery, groupId, courseId, paymentStatus, length } = req.query;
   const limit = 10;
 
-  console.log(req.query);
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
-    const filterObj = {};
+    const filterObj = {
+      "groups.0": { $exists: true },
+    };
 
     if (paymentStatus === "latePayment") {
       const payingStudentsIds = await getPayingStutdents();
@@ -194,18 +194,11 @@ export const getTutionFees = async (req, res) => {
 
     if (courseId) filterObj.courses = courseId;
 
-    const studentsCount = await Student.countDocuments({
-      fullName: { $regex: regexSearchQuery },
-      ...filterObj,
-    });
-
-    const totalPages = Math.ceil(studentsCount / limit);
-
     const students = await Student.find({
       fullName: { $regex: regexSearchQuery },
       ...filterObj,
     })
-      .skip((page - 1) * limit)
+      .skip(+length || 0)
       .limit(limit)
       .populate({
         path: "groups.group",
@@ -231,7 +224,7 @@ export const getTutionFees = async (req, res) => {
 
     res.status(200).json({
       tutionFees,
-      totalPages,
+      currentLength: +length + students.length,
       paymentsResults,
     });
   } catch (err) {
@@ -242,8 +235,6 @@ export const getTutionFees = async (req, res) => {
 
 export const updateTuitionFee = async (req, res) => {
   const { studentId, group, paids } = req.body;
-
-  console.log(req.body);
 
   try {
     const student = await Student.findById(studentId);
@@ -264,7 +255,11 @@ export const updateTuitionFee = async (req, res) => {
 
     await student.save();
 
-    res.status(200).json();
+    const newPaids = student.groups.find(
+      (item) => item.group.toString() === group._id.toString()
+    )?.paids;
+
+    res.status(200).json({ ...req.body, paids: newPaids });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
