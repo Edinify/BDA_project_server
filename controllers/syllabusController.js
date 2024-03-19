@@ -50,7 +50,6 @@ export const getSyllabusForPagination = async (req, res) => {
         .sort({ orderNumber: 1 })
         .limit(limit);
     }
-    console.log(syllabusData, totalLength)
     res.status(200).json({ syllabusData, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });

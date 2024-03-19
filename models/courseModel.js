@@ -29,4 +29,6 @@ const courseSchema = new Schema(
   { timestamps: true }
 );
 
+courseSchema.index({ createdAt: 1 });
+
 export const Course = mongoose.model("Course", courseSchema);

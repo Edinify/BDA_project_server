@@ -4,9 +4,9 @@ import { Worker } from "../models/workerModel.js";
 
 // Get consultations for pagination
 export const getConsultationsForPagination = async (req, res) => {
-  const { searchQuery, status, length} = req.query;
+  const { searchQuery, status, length } = req.query;
   const limit = 10;
-  console.log(length)
+
   try {
     let totalLength;
     let consultations;
@@ -36,10 +36,10 @@ export const getConsultationsForPagination = async (req, res) => {
         .limit(limit)
         .populate("course teacher");
 
-      totalLength = consultationsCount
+      totalLength = consultationsCount;
     } else {
       const consultationsCount = await Consultation.countDocuments(filterObj);
-      totalLength = consultationsCount
+      totalLength = consultationsCount;
       consultations = await Consultation.find(filterObj)
         .skip(length || 0)
         .limit(limit)
@@ -58,8 +58,6 @@ export const createConsultation = async (req, res) => {
     newConsultation.populate("course teacher");
     await newConsultation.save();
 
-    const consultationCount = await Consultation.countDocuments();
-    const lastPage = Math.ceil(consultationCount / 10);
     res.status(201).json(newConsultation);
   } catch (err) {
     res.status(500).json({ error: err.message });

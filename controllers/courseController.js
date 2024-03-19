@@ -41,7 +41,8 @@ export const getCoursesForPagination = async (req, res) => {
         name: { $regex: regexSearchQuery },
       })
         .skip(length || 0)
-        .limit(limit);
+        .limit(limit)
+        .sort({ createdAt: -1 });
 
       totalLength = coursesCount;
     } else {
@@ -49,7 +50,8 @@ export const getCoursesForPagination = async (req, res) => {
       totalLength = coursesCount;
       courses = await Course.find()
         .skip(length || 0)
-        .limit(limit);
+        .limit(limit)
+        .sort({ createdAt: -1 });
     }
 
     res.status(200).json({ courses, totalLength });
@@ -144,15 +146,6 @@ export const deleteCourse = async (req, res) => {
 
     res.status(200).json(deletedCourse);
   } catch (err) {
-    logger.error({
-      method: "DELETE",
-      status: 500,
-      message: err.message,
-      for: "DELETE COURSE",
-      user: req.user,
-      courseId: id,
-      functionName: deleteCourse.name,
-    });
     res.status(500).json({ message: { error: err.message } });
   }
 };

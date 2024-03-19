@@ -135,7 +135,6 @@ export const getTeachersForPagination = async (req, res) => {
   const { searchQuery, status, role, courseId, length } = req.query;
   const limit = 10;
 
-  //  console.log(page);
   try {
     let totalLength;
     let teachers;

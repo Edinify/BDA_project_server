@@ -87,10 +87,10 @@ export const getGroupsWithMentorId = async (req, res) => {
 
 // Get groups for pagination
 export const getGroupsForPagination = async (req, res) => {
-  const {length, searchQuery, status, courseId, teacherId, mentorId } = req.query;
-  const page = parseInt(req.query.page) || 1;
+  const { length, searchQuery, status, courseId, teacherId, mentorId } =
+    req.query;
   const limit = 10;
-  console.log(length)
+
   try {
     let totalLength;
     let groupData;
@@ -116,18 +116,20 @@ export const getGroupsForPagination = async (req, res) => {
       })
         .skip(length || 0)
         .limit(limit)
+        .sort({ createdAt: -1 })
         .populate("teachers students course mentors");
 
-        totalLength = groupsCount
+      totalLength = groupsCount;
     } else {
       const groupsCount = await Group.countDocuments(filterObj);
       totalLength = groupsCount;
       groupData = await Group.find(filterObj)
         .skip(length || 0)
         .limit(limit)
+        .sort({ createdAt: -1 })
         .populate("teachers students course mentors");
     }
-    console.log(groupData, totalLength)
+
     res.status(200).json({ groupData, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
@@ -150,6 +152,7 @@ export const createGroup = async (req, res) => {
     }
 
     const newGroup = new Group(req.body);
+    await newGroup.populate("teachers students course mentors");
     await newGroup.save();
 
     createLessons(newGroup);
@@ -158,9 +161,6 @@ export const createGroup = async (req, res) => {
       { _id: { $in: newGroup.students } },
       { $push: { groups: { group: newGroup._id } } }
     );
-
-    const groupsCount = await Group.countDocuments();
-    const lastPage = Math.ceil(groupsCount / 10);
 
     res.status(201).json(newGroup);
   } catch (err) {

@@ -63,4 +63,6 @@ const groupSchema = new Schema({
   },
 });
 
+groupSchema.index({ createdAt: 1 });
+
 export const Group = mongoose.model("Group", groupSchema);
