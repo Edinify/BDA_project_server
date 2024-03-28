@@ -17,10 +17,9 @@ export const getSyllabus = async (req, res) => {
 
 // Get syllabus for pagination
 export const getSyllabusForPagination = async (req, res) => {
-  const { searchQuery, courseId,length } = req.query;
-  // const page = parseInt(req.query.page) || 1;
+  const { searchQuery, courseId, length } = req.query;
   const limit = 10;
-  // console.log(searchQuery, courseId,length)
+
   try {
     let totalLength;
     let syllabusData;
@@ -66,7 +65,6 @@ export const createSyllabus = async (req, res) => {
       courseId,
     });
 
-
     if (existingSyllabus) {
       return res.status(409).json({ key: "syllabus-already-exists" });
     }
@@ -74,9 +72,6 @@ export const createSyllabus = async (req, res) => {
     const newSyllabus = new Syllabus(req.body);
     await newSyllabus.save();
 
-    const syllabusCount = await Syllabus.countDocuments({ courseId });
-    const lastPage = Math.ceil(syllabusCount / 10);
-    console.log(newSyllabus)
     res.status(201).json(newSyllabus);
   } catch (err) {
     console.log(err);

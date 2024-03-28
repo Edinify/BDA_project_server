@@ -10,8 +10,6 @@ export const createLesson = async (req, res) => {
   const { date } = req.body;
   const day = new Date(date).getDay();
 
-  console.log(date);
-  console.log(day);
   try {
     const newLesson = new Lesson({
       ...req.body,
@@ -90,8 +88,6 @@ export const createLessons = async (group) => {
     let syllabusIndex = 0;
     const lessons = [];
 
-    console.log(checkLessons);
-
     if (!startDate || !endDate || lessonDate.length == 0 || checkLessons)
       return;
 
@@ -106,7 +102,6 @@ export const createLessons = async (group) => {
       const checkDay = lessonDate?.find((item) => item.day === currentDay);
 
       if (checkDay && !checkFriday) {
-        console.log("not freeday");
         const currentDate = new Date(startDate);
         const studentsObj = students.map((student) => ({
           student,
@@ -210,9 +205,6 @@ export const getLessons = async (req, res) => {
           model: "Course",
         },
       });
-
-    console.log(lessons);
-    console.log(length);
 
     res.status(200).json({
       lessons,
