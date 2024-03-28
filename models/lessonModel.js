@@ -47,6 +47,10 @@ const lessonSchema = new Schema(
     topic: {
       type: Object,
     },
+    mentorHour: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
       enum: ["unviewed", "confirmed", "cancelled"],
