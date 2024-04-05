@@ -10,6 +10,7 @@ import {
   confirmStudentChanges,
   cancelStudentChanges,
   exportStudentContract,
+  exportStudentsExcel,
 } from "../controllers/studentController.js";
 import { authMiddleware, checkAdminAndSuperAdmin } from "../middleware/auth.js";
 
@@ -26,6 +27,7 @@ router.get(
 );
 router.get("/active", getActiveStudents);
 router.get("/contract", exportStudentContract);
+router.get('/excel', exportStudentsExcel)
 router.patch("/:id", authMiddleware, updateStudent);
 router.patch("/changes/confirm/:id", authMiddleware, confirmStudentChanges);
 router.patch("/changes/cancel/:id", authMiddleware, cancelStudentChanges);

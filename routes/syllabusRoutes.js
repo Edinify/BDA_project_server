@@ -6,6 +6,7 @@ import {
   confirmSyllabusChanges,
   createSyllabus,
   deleteSyllabus,
+  exportSyllabusExcel,
   getSyllabus,
   getSyllabusForPagination,
   updateSyllabus,
@@ -15,6 +16,7 @@ const router = express.Router();
 
 router.get("/all", getSyllabus);
 router.get("/pagination", getSyllabusForPagination);
+router.get("/excel", exportSyllabusExcel);
 router.post("/", createSyllabus);
 router.patch("/:id", authMiddleware, updateSyllabus);
 router.patch("/changes/confirm/:id", authMiddleware, confirmSyllabusChanges);

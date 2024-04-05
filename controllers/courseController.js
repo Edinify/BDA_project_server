@@ -1,6 +1,7 @@
 import logger from "../config/logger.js";
 import { Course } from "../models/courseModel.js";
 import { Worker } from "../models/workerModel.js";
+import exceljs from "exceljs";
 
 // Get courses
 export const getCourses = async (req, res) => {
@@ -24,7 +25,7 @@ export const getCourses = async (req, res) => {
 // Get courses for pagination
 export const getCoursesForPagination = async (req, res) => {
   const { searchQuery, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;
@@ -184,6 +185,60 @@ export const cancelCourseChanges = async (req, res) => {
     );
 
     res.status(200).json(course);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Export excel file
+
+export const exportCoursesExcel = async (req, res) => {
+  const headerStyle = {
+    font: { bold: true },
+  };
+  try {
+    const courses = await Course.find();
+
+    const workbook = new exceljs.Workbook();
+
+    const sheet = workbook.addWorksheet("courses");
+
+    sheet.columns = [
+      { header: "İxtisas", key: "name", width: 30 },
+      { header: "Tam", key: "total", width: 15 },
+      { header: "Tədris müddəti", key: "lessonTime", width: 15 },
+      { header: "10 Hissəli", key: "tenPart", width: 15 },
+    ];
+
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+    });
+
+    courses.forEach((course) => {
+      const total = course.payments.find((item) => item.paymentType === "Tam");
+      const lessonTime = course.payments.find(
+        (item) => item.paymentType === "Tədris müddəti"
+      );
+      const tenPart = course.payments.find(
+        (item) => item.paymentType === "10 hissəli"
+      );
+      sheet.addRow({
+        name: course?.name || "",
+        total: total?.payment ? `${total.payment} AZN` : "",
+        lessonTime: `${lessonTime?.payment ? lessonTime.payment + "AZN" : ""}/${
+          lessonTime?.part ? lessonTime.part + "hissəli" : ""
+        }`,
+        tenPart: tenPart?.payment ? `${tenPart.payment} AZN` : "",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=courses.xlsx");
+    workbook.xlsx.write(res);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

@@ -11,6 +11,8 @@ import { Worker } from "../models/workerModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import mongoose from "mongoose";
 import moment from "moment";
+import exceljs from "exceljs";
+
 
 // Create student
 export const createStudent = async (req, res) => {
@@ -100,7 +102,7 @@ export const getActiveStudents = async (req, res) => {
 // Get students for pagination
 export const getStudentsForPagination = async (req, res) => {
   const { searchQuery, status, courseId, groupId, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;
@@ -548,6 +550,98 @@ export const exportStudentContract = async (req, res) => {
       path.resolve(process.cwd(), "exports", "exported_document.docx"),
       "exported_document.docx"
     );
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Export excel file
+
+export const exportStudentsExcel = async (req, res) => {
+  const whereComingList = [
+    { name: "İnstagram Sponsorlu", key: "instagramSponsor" },
+    { name: "İnstagram standart", key: "instagramStandart" },
+    { name: "İnstruktor Tövsiyyəsi", key: "instructorRecommend" },
+    { name: "Dost Tövsiyyəsi", key: "friendRecommend" },
+    { name: "Sayt", key: "site" },
+    { name: "Tədbir", key: "event" },
+    { name: "AİESEC", key: "AİESEC" },
+    { name: "PO COMMUNİTY", key: "POCOMMUNİTY" },
+    { name: "Köhnə tələbə", key: "oldStudent" },
+    { name: "Staff tövsiyyəsi", key: "staffRecommend" },
+    { name: "SMS REKLAMI", key: "smsAd" },
+    { name: "PROMOKOD", key: "promocode" },
+    { name: "Resale", key: "resale" },
+  ];
+  const whereSendList = [
+    { name: "Technest İnside", key: "technestInside" },
+    { name: "Dövlət Məşğulluq Agentliyi", key: "DMA" },
+    { name: "Azərbaycan Respublikası Mədəniyyət Nazirliyi", key: "ARMN" },
+    { name: "Təhsilin İnkişafı Fondu", key: "TIF" },
+    { name: "Azərbaycan Respublikası Elm və Təhsil Nazirliyi", key: "ARETN" },
+    { name: "Technest university", key: "technestUniversity" },
+    { name: "Future leaders", key: "futureLeaders" },
+    { name: "Code for Future", key: "codeForFuture" },
+    { name: "Digər", key: "other" },
+  ];
+
+  const headerStyle = {
+    font: { bold: true },
+  };
+  try {
+    const students = await Student.find()
+      .populate("courses groups.group")
+      .sort({ createdAt: -1 });
+
+    const workbook = new exceljs.Workbook();
+
+    const sheet = workbook.addWorksheet("students");
+
+    sheet.columns = [
+      { header: "Tələbə adı	", key: "fullName", width: 30 },
+      { header: "Fin kod", key: "fin", width: 15 },
+      { header: "Seria nömrəsi", key: "seria", width: 15 },
+      { header: "Doğum tarixi", key: "birthday", width: 15 },
+      { header: "Telefon nömrəsi", key: "phone", width: 20 },
+      { header: "İxtisaslar", key: "courses", width: 20 },
+      { header: "Qruplar", key: "groups", width: 20 },
+      { header: "Bizi haradan eşidiblər", key: "whereComing", width: 30 },
+      { header: "Haradan göndərilib", key: "whereSend", width: 30 },
+    ];
+
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+    });
+
+    students.forEach((student) => {
+      sheet.addRow({
+        fullName: student?.fullName || "",
+        fin: student?.fin || "",
+        seria: student?.seria || "",
+        birthday: student?.birthday
+          ? moment(student.birthday).format("DD.MM.YYYY")
+          : "",
+        phone: student?.phone || "",
+        courses:
+          student?.courses?.map((course) => course.name).join(", ") || "",
+        groups:
+          student?.groups?.map((item) => item.group.name).join(", ") || "",
+        whereComing:
+          whereComingList.find((item) => item.key === student?.whereComing)
+            ?.name || "",
+        whereSend:
+          whereSendList.find((item) => item.key === student?.whereSend)?.name ||
+          "",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=students.xlsx");
+    workbook.xlsx.write(res);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

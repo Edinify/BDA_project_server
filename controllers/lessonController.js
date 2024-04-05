@@ -154,7 +154,7 @@ export const createLessons = async (group) => {
 
 export const getLessons = async (req, res) => {
   const { length, groupId, startDate, endDate, status } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     const filterObj = {

@@ -2,6 +2,7 @@ import logger from "../config/logger.js";
 import { Course } from "../models/courseModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
 import { Worker } from "../models/workerModel.js";
+import exceljs from "exceljs";
 
 // Get syllabus
 export const getSyllabus = async (req, res) => {
@@ -18,7 +19,7 @@ export const getSyllabus = async (req, res) => {
 // Get syllabus for pagination
 export const getSyllabusForPagination = async (req, res) => {
   const { searchQuery, courseId, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;
@@ -179,6 +180,45 @@ export const cancelSyllabusChanges = async (req, res) => {
     );
 
     res.status(200).json(syllabus);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Export excel file
+export const exportSyllabusExcel = async (req, res) => {
+  const { courseId } = req.query;
+  const headerStyle = {
+    font: { bold: true },
+  };
+
+  try {
+    const course = await Course.findById(courseId);
+    const syllabus = await Syllabus.find({ courseId }).sort({ orderNumber: 1 });
+
+    const workbook = new exceljs.Workbook();
+
+    const sheet = workbook.addWorksheet("syllabus");
+
+    sheet.columns = [{ header: course.name, key: "name", width: 30 }];
+
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+    });
+
+    syllabus.forEach((item) => {
+      sheet.addRow({
+        name: item?.name ? item.name : "",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=syllabus.xlsx");
+    workbook.xlsx.write(res);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

@@ -9,6 +9,7 @@ import {
   confirmTeacherChanges,
   createTeacher,
   deleteTeacher,
+  exportTeachersExcel,
   getActiveTeachers,
   getAllTeachers,
   getCheckedTeachers,
@@ -35,6 +36,7 @@ router.get("/active", getActiveTeachers);
 router.get("/by-course", getTeachersByCourseId);
 router.get("/checked", getCheckedTeachers);
 router.get("/pagination", getTeachersForPagination);
+router.get("/excel", exportTeachersExcel);
 router.patch("/:id", authMiddleware, updateTeacher);
 router.delete("/:id", deleteTeacher);
 router.patch("/own/password", authMiddleware, updateTeacherPassword);

@@ -43,7 +43,7 @@ export const createWorker = async (req, res) => {
 // Get workers
 export const getWorkers = async (req, res) => {
   const { searchQuery,length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;

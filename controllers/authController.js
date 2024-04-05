@@ -45,6 +45,7 @@ export const registerSuperAdmin = async (req, res) => {
   }
 };
 
+
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;

@@ -6,6 +6,8 @@ import { Admin } from "../models/adminModel.js";
 import { Worker } from "../models/workerModel.js";
 import { Group } from "../models/groupModel.js";
 import { Course } from "../models/courseModel.js";
+import exceljs from "exceljs";
+import moment from "moment";
 
 // Create teacher
 
@@ -133,7 +135,7 @@ export const getCheckedTeachers = async (req, res) => {
 // Get teacher for pagination
 export const getTeachersForPagination = async (req, res) => {
   const { searchQuery, status, role, courseId, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;
@@ -559,6 +561,65 @@ export const cancelTeacherChanges = async (req, res) => {
     ).populate("courses");
 
     res.status(200).json({ ...teacher.toObject(), password: "" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Export excel file
+
+export const exportTeachersExcel = async (req, res) => {
+  const { role = "teacher" } = req.query;
+  const headerStyle = {
+    font: { bold: true },
+  };
+  try {
+    const teachers = await Teacher.find({ role })
+      .populate("courses")
+      .sort({ createdAt: -1 });
+
+    const workbook = new exceljs.Workbook();
+
+    const sheet = workbook.addWorksheet("teachers");
+
+    sheet.columns = [
+      { header: "Müəllim adı", key: "fullName", width: 30 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Fin kod", key: "fin", width: 15 },
+      { header: "Seria nömrəsi", key: "seria", width: 15 },
+      { header: "Doğum tarixi", key: "birthday", width: 15 },
+      { header: "Telefon nömrəsi", key: "phone", width: 20 },
+      { header: "İxtisaslar", key: "courses", width: 40 },
+      { header: "Status", key: "status", width: 15 },
+    ];
+
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+    });
+
+    teachers.forEach((teacher) => {
+      sheet.addRow({
+        fullName: teacher?.fullName || "",
+        fin: teacher?.fin || "",
+        seria: teacher?.seria || "",
+        email: teacher?.email || "",
+        birthday: teacher?.birthday
+          ? moment(teacher.birthday).format("DD.MM.YYYY")
+          : "",
+        phone: teacher?.phone || "",
+        courses:
+          teacher?.courses?.map((course) => course.name).join(", ") || "",
+        status: teacher.status ? "Aktiv" : "Deaktiv",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=teachers.xlsx");
+    workbook.xlsx.write(res);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
