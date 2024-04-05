@@ -3,7 +3,7 @@ import { Event } from "../models/eventModel.js";
 // Get events for pagination
 export const getEventsForPagination = async (req, res) => {
   const { searchQuery,length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;

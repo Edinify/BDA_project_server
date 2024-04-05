@@ -4,6 +4,7 @@ import {
   confirmCourseChanges,
   createCourse,
   deleteCourse,
+  exportCoursesExcel,
   getCourses,
   getCoursesForPagination,
   updateCourse,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.get("/all", getCourses);
 router.get("/pagination", getCoursesForPagination);
+router.get("/excel", exportCoursesExcel);
 router.post("/", createCourse);
 router.patch("/:id", authMiddleware, updateCourse);
 router.patch("/changes/confirm/:id", authMiddleware, confirmCourseChanges);

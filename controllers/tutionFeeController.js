@@ -1,6 +1,8 @@
 import { calcDate } from "../calculate/calculateDate.js";
 import { Student } from "../models/studentModel.js";
 import { v4 as uuidv4 } from "uuid";
+import exceljs from "exceljs";
+import moment from "moment";
 
 //  Get paying students
 async function getPayingStutdents() {
@@ -177,7 +179,7 @@ async function getPaymentsResults() {
 // get tution fees
 export const getTutionFees = async (req, res) => {
   const { searchQuery, groupId, courseId, paymentStatus, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
@@ -260,6 +262,122 @@ export const updateTuitionFee = async (req, res) => {
     )?.paids;
 
     res.status(200).json({ ...req.body, paids: newPaids });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Export excel file
+export const exportTuitionFeeExcel = async (req, res) => {
+  const headerStyle = {
+    font: { bold: true },
+  };
+
+  try {
+    const students = await Student.find({
+      "groups.0": { $exists: true },
+    }).populate({
+      path: "groups.group",
+      populate: {
+        path: "course",
+        module: "Course",
+      },
+    });
+
+    const tutionFees = students.reduce((list, student) => {
+      const tutionFee = student.groups.map((item) => ({
+        ...student.toObject(),
+        groups: null,
+        ...item.toObject(),
+        studentId: student._id,
+        _id: uuidv4(),
+      }));
+
+      return [...list, ...tutionFee];
+    }, []);
+
+    console.log(tutionFees);
+
+    const workbook = new exceljs.Workbook();
+
+    const sheet = workbook.addWorksheet("tuitionfee");
+
+    sheet.columns = [
+      { header: "Tələbə adı	", key: "fullName", width: 30 },
+      { header: "Fin kod", key: "fin", width: 15 },
+      { header: "Seria nömrəsi", key: "seria", width: 15 },
+      { header: "Doğum tarixi", key: "birthday", width: 15 },
+      { header: "Telefon nömrəsi", key: "phone", width: 20 },
+      { header: "Qrup", key: "group", width: 20 },
+      { header: "İxtisas", key: "course", width: 20 },
+      { header: "Məbləğ", key: "amount", width: 8 },
+      { header: "Yekun Məbləğ", key: "totalAmount", width: 15 },
+      { header: "Yekun Qalıq", key: "totalRest", width: 15 },
+      { header: "Endirim növü", key: "discountReason", width: 20 },
+      { header: "Endirim", key: "discount", width: 10 },
+      { header: "Ödənilib", key: "paid", width: 11 },
+      { header: "Ödəniş növü", key: "paymentType", width: 20 },
+      { header: "Cari ödəniş", key: "currentPayment", width: 15 },
+      { header: "Status", key: "status", width: 20 },
+    ];
+
+    sheet.getRow(1).eachCell((cell) => {
+      cell.font = headerStyle.font;
+    });
+
+    tutionFees.forEach((item) => {
+      const currDate = new Date();
+      currDate.setHours(23, 59, 59, 999);
+
+      const totalConfirmedPayment = item?.paids?.reduce(
+        (value, item) => value + parseFloat(item?.confirmed ? item.payment : 0),
+        0
+      );
+
+      const beforePayments = item?.payments?.filter((item) => {
+        const date = (item?.paymentDate && new Date(item.paymentDate)) || null;
+        return date < currDate;
+      });
+
+      const totalBeforePayment = beforePayments.reduce(
+        (total, item) => total + item.payment,
+        0
+      );
+
+      const currPayment = totalBeforePayment - totalConfirmedPayment;
+
+      sheet.addRow({
+        fullName: item?.fullName ? item.fullName : "",
+        fin: item?.fin || "",
+        seria: item?.seria || "",
+        birthday: item?.birthday
+          ? moment(item.birthday).format("DD.MM.YYYY")
+          : "",
+        phone: item?.phone || "",
+        group: item?.group?.name || "",
+        course: item?.group?.course?.name || "",
+        amount: item?.amount || "",
+        totalAmount: item?.totalAmount || "",
+        totalRest: (item?.totalAmount || 0) - totalConfirmedPayment,
+        discountReason: item?.discountReason || "",
+        discount: item?.discount ? `${item.discount}%` : "",
+        paid: totalConfirmedPayment || 0,
+        paymentType: item?.payment?.paymentType || "",
+        currentPayment: currPayment,
+        status: item?.status ? "Davam edir" : "Məzun",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=tuitionfee.xlsx"
+    );
+    workbook.xlsx.write(res);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

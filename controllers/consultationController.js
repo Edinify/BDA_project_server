@@ -5,7 +5,7 @@ import { Worker } from "../models/workerModel.js";
 // Get consultations for pagination
 export const getConsultationsForPagination = async (req, res) => {
   const { searchQuery, status, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;

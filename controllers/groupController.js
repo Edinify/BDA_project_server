@@ -89,7 +89,7 @@ export const getGroupsWithMentorId = async (req, res) => {
 export const getGroupsForPagination = async (req, res) => {
   const { length, searchQuery, status, courseId, teacherId, mentorId } =
     req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let totalLength;

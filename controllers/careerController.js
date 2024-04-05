@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 // Get careers
 export const getCareers = async (req, res) => {
   const { searchQuery, courseId, groupId, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
