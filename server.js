@@ -3,7 +3,6 @@ import express from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
-
 import studentRoutes from "./routes/studentRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -48,12 +47,9 @@ import { getWeeklyGroupTable } from "./controllers/dashboardController.js";
 
 dotenv.config();
 
-
-// djkfhdaskjdjsakldsajdslafdjaskljfhksjafsdk
 const app = express();
 const port = process.env.PORT;
 const uri = process.env.DB_URI;
- console.log("start run");
 app.use(
   cors({
     origin: process.env.URL_PORT,
@@ -97,12 +93,7 @@ app.get("/", (req, res) => {
   res.send("hello");
 });
 
-// wbm.start().then(async () => {
-//   const phones = ['123456'];
-//   const message = 'Good Morning.';
-//   await wbm.send(phones, message);
-//   await wbm.end();
-// }).catch(err => console.log(err));
+
 
 // mongoose
 //   .connect(uri)
