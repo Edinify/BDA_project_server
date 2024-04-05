@@ -34,11 +34,25 @@ export const getActiveStudentsCount = async (req, res) => {
   }
 };
 
-export const getAllGroupsCount = async (req, res) => {
+export const getGroupsCount = async (req, res) => {
   try {
-    const groupsCount = await Group.countDocuments({});
+    const allGroupsCount = await Group.countDocuments();
+    const waitingGroupsCount = await Group.countDocuments({
+      status: "waiting",
+    });
+    const currentGroupsCount = await Group.countDocuments({
+      status: "current",
+    });
+    const endedGroupsCount = await Group.countDocuments({
+      status: "ended",
+    });
 
-    res.status(200).json(groupsCount);
+    res.status(200).json({
+      allGroupsCount,
+      waitingGroupsCount,
+      currentGroupsCount,
+      endedGroupsCount,
+    });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
