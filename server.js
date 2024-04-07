@@ -29,6 +29,7 @@ import careerRoutes from "./routes/careerRoutes.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import axios from "axios";
 // import updateButtonRoutes from "./routes/updateButtonRoutes.js";
 
 import {
@@ -59,7 +60,10 @@ app.use(
     exposedHeaders: ["Content-Type"],
   })
 );
+// ==============
 
+
+// ==============
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "15mb" }));
 app.use("/api/user/auth", authRoutes);
