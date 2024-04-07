@@ -13,7 +13,6 @@ import mongoose from "mongoose";
 import moment from "moment";
 import exceljs from "exceljs";
 
-
 // Create student
 export const createStudent = async (req, res) => {
   try {
@@ -166,8 +165,9 @@ export const getStudentsForPagination = async (req, res) => {
 
     students = await Promise.all(
       students.map(async (student) => {
-        const targetLessons = Lesson.aggregate([
+        const practicsLessonCount = Lesson.aggregate([
           { $unwind: "$students" },
+          { $match: { "topic.name": "Praktika" } },
           {
             $match: {
               "students.student": new mongoose.Types.ObjectId(student._id),
@@ -177,9 +177,29 @@ export const getStudentsForPagination = async (req, res) => {
           { $group: { _id: null, count: { $sum: 1 } } },
         ]);
 
-        const result = await targetLessons.exec();
+        const mainLessonCount = Lesson.aggregate([
+          { $unwind: "$students" },
+          { $match: { "topic.name": { $ne: "Praktika" } } },
+          {
+            $match: {
+              "students.student": new mongoose.Types.ObjectId(student._id),
+            },
+          },
+          { $match: { "students.attendance": -1, status: "confirmed" } },
+          { $group: { _id: null, count: { $sum: 1 } } },
+        ]);
 
-        return { ...student.toObject(), qbCount: result[0]?.count || 0 };
+        const practics = await practicsLessonCount.exec();
+        const main = await mainLessonCount.exec();
+
+        console.log(practics, "praktika");
+        console.log(main, "esas");
+
+        return {
+          ...student.toObject(),
+          practicsQbCount: practics[0]?.count || 0,
+          mainQbCount: main[0]?.count || 0,
+        };
       })
     );
 

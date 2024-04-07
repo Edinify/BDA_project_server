@@ -4,10 +4,10 @@ import {
   getActiveStudentsCount,
   getAdvertisingStatistics,
   getAllEventsCount,
-  getAllGroupsCount,
   getAllStudentsCount,
   getConsultationsData,
   getCoursesStatistics,
+  getGroupsCount,
   getLessonsCountChartData,
   getTachersResults,
   getWeeklyGroupTable,
@@ -17,7 +17,7 @@ const router = express.Router();
 
 router.get("/all-students", getAllStudentsCount);
 router.get("/active-students", getActiveStudentsCount);
-router.get("/all-groups", getAllGroupsCount);
+router.get("/all-groups", getGroupsCount);
 router.get("/events", getAllEventsCount);
 router.get("/course-statistic", getCoursesStatistics);
 router.get("/consult-statistic", getConsultationsData);
