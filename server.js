@@ -45,12 +45,14 @@ import router from "./routes/syllabusRoutes.js";
 import { Student } from "./models/studentModel.js";
 import { Group } from "./models/groupModel.js";
 import { getWeeklyGroupTable } from "./controllers/dashboardController.js";
+import { Course } from "./models/courseModel.js";
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
 const uri = process.env.DB_URI;
+console.log("start run");
 app.use(
   cors({
     origin: process.env.URL_PORT,
