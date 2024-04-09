@@ -36,10 +36,12 @@ export const getCoursesForPagination = async (req, res) => {
 
       const coursesCount = await Course.countDocuments({
         name: { $regex: regexSearchQuery },
+        deleted: false,
       });
 
       courses = await Course.find({
         name: { $regex: regexSearchQuery },
+        deleted: false,
       })
         .skip(length || 0)
         .limit(limit)
@@ -47,9 +49,9 @@ export const getCoursesForPagination = async (req, res) => {
 
       totalLength = coursesCount;
     } else {
-      const coursesCount = await Course.countDocuments();
+      const coursesCount = await Course.countDocuments({ deleted: false });
       totalLength = coursesCount;
-      courses = await Course.find()
+      courses = await Course.find({ deleted: false })
         .skip(length || 0)
         .limit(limit)
         .sort({ createdAt: -1 });
@@ -139,7 +141,11 @@ export const deleteCourse = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deletedCourse = await Course.findByIdAndDelete(id);
+    const deletedCourse = await Course.findByIdAndUpdate(
+      id,
+      { deleted: true },
+      { new: true }
+    );
 
     if (!deletedCourse) {
       return res.status(404).json({ message: "course not found" });

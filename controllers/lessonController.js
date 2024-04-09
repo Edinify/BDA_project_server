@@ -373,7 +373,24 @@ export const deleteLesson = async (req, res) => {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    res.status(200).json(deletedLesson);
+    const groupId = deletedLesson.group;
+
+    const confirmedCount = await Lesson.countDocuments({
+      group: groupId,
+      status: "confirmed",
+    });
+    const cancelledCount = await Lesson.countDocuments({
+      group: groupId,
+      status: "cancelled",
+    });
+    const unviewedCount = await Lesson.countDocuments({
+      group: groupId,
+      status: "unviewed",
+    });
+
+    res
+      .status(200)
+      .json({ deletedLesson, confirmedCount, cancelledCount, unviewedCount });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }

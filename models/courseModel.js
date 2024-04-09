@@ -25,6 +25,10 @@ const courseSchema = new Schema(
     changes: {
       type: Object,
     },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
