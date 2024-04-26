@@ -277,6 +277,7 @@ export const exportTuitionFeeExcel = async (req, res) => {
   try {
     const students = await Student.find({
       "groups.0": { $exists: true },
+      deleted: false,
     }).populate({
       path: "groups.group",
       populate: {

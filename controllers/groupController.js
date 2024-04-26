@@ -85,6 +85,25 @@ export const getGroupsWithMentorId = async (req, res) => {
   }
 };
 
+// Get groups with student id
+export const getGroupsWithStudentId = async (req, res) => {
+  const { searchQuery, studentId } = req.query;
+
+  try {
+    const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
+
+    const groups = await Group.find({
+      name: { $regex: regexSearchQuery },
+      students: { $in: studentId },
+    }).populate("teachers mentors");
+
+    console.log(groups, "ddddddddddddddddddddddddddddddd");
+    res.status(200).json(groups);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
 // Get groups for pagination
 export const getGroupsForPagination = async (req, res) => {
   const { length, searchQuery, status, courseId, teacherId, mentorId } =

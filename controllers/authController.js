@@ -25,11 +25,14 @@ export const registerSuperAdmin = async (req, res) => {
     const existingTeacher = await Teacher.findOne({
       email: { $regex: regexEmail },
     });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+    });
     const existingAdmin = await Admin.findOne({
       email: { $regex: regexEmail },
     });
 
-    if (existingWorker || existingTeacher || existingAdmin) {
+    if (existingWorker || existingTeacher || existingStudent || existingAdmin) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
@@ -45,21 +48,20 @@ export const registerSuperAdmin = async (req, res) => {
   }
 };
 
-
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  // console.log(req.body);
+
   try {
     const regexEmail = new RegExp(email, "i");
 
     const admin = await Admin.findOne({ email: { $regex: regexEmail } });
     const worker = await Worker.findOne({ email: { $regex: regexEmail } });
     const teacher = await Teacher.findOne({ email: { $regex: regexEmail } });
+    const student = await Student.findOne({ email: { $regex: regexEmail } });
 
-    const user = admin || worker || teacher;
+    const user = admin || worker || teacher || student;
 
-    // console.log(user, "user in login");
     if (!user) {
       return res.status(404).json({ key: "user-not-found" });
     }
@@ -67,7 +69,6 @@ export const login = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      // console.log("errrrroorro");
       return res.status(404).json({ key: "invalid-password" });
     }
 
@@ -178,8 +179,9 @@ export const checkOtpCode = async (req, res) => {
     const admin = await Admin.findOne({ otp });
     const student = await Student.findOne({ otp });
     const teacher = await Teacher.findOne({ otp });
+    const worker = await Worker.findOne({ otp });
 
-    const user = admin || student || teacher;
+    const user = admin || student || teacher || worker;
 
     if (!user) {
       return res.status(404).json({ message: "invalid-otp" });
@@ -191,21 +193,14 @@ export const checkOtpCode = async (req, res) => {
       await Admin.findByIdAndUpdate(userId, { otp: 0 });
     } else if (user.role === "teacher") {
       await Teacher.findByIdAndUpdate(userId, { otp: 0 });
-    } else {
+    } else if (user.role === "student") {
       await Student.findByIdAndUpdate(userId, { otp: 0 });
+    } else {
+      await Worker.findByIdAndUpdate(userId, { otp: 0 });
     }
 
     res.status(200).json({ userId });
   } catch (err) {
-    logger.error({
-      method: "POST",
-      status: 500,
-      message: err.message,
-      for: "CHECK OTP CODE",
-      postedData: req.body,
-      functionName: checkOtpCode.name,
-    });
-
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -218,6 +213,7 @@ export const changeForgottenPassword = async (req, res) => {
     const admin = await Admin.findById(userId);
     const student = await Student.findById(userId);
     const teacher = await Teacher.findById(userId);
+    const worker = await Worker.findById(userId);
 
     const user = admin || student || teacher;
 
@@ -234,21 +230,14 @@ export const changeForgottenPassword = async (req, res) => {
       await Admin.findByIdAndUpdate(user._id, { password: hashedPassword });
     } else if (user.role === "teacher") {
       await Teacher.findByIdAndUpdate(user._id, { password: hashedPassword });
-    } else {
+    } else if (user.role === "student") {
       await Student.findByIdAndUpdate(user._id, { password: hashedPassword });
+    } else {
+      await Worker.findByIdAndUpdate(user._id, { password: hashedPassword });
     }
 
     res.status(200).json({ key: "change-password" });
   } catch (err) {
-    logger.error({
-      method: "POST",
-      status: 500,
-      message: err.message,
-      for: "CHANGE FORGETTEN PASSWORD",
-      postedData: req.body,
-      functionName: changeForgottenPassword.name,
-    });
-
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -256,6 +245,7 @@ export const changeForgottenPassword = async (req, res) => {
 // create accesstoken
 
 const createAccessToken = (user) => {
+  console.log(user, "uuuuserrrrr");
   try {
     const AccessToken = jwt.sign(
       {
@@ -270,18 +260,6 @@ const createAccessToken = (user) => {
 
     return AccessToken;
   } catch (error) {
-    logger.error({
-      method: "POST",
-      message: error.message,
-      for: "CREATE ACCESS TOKEN",
-      functionName: createAccessToken.name,
-      tokenInfo: {
-        email: user.email,
-        role: user.role,
-        id: user._id,
-        fullName: user.fullName,
-      },
-    });
     console.log(error);
   }
 };
@@ -371,6 +349,8 @@ export const getUser = async (req, res) => {
       user = await Teacher.findById(id);
     } else if (role === "worker") {
       user = await Worker.findById(id);
+    } else if (role === "student") {
+      user = await Student.findById(id);
     }
 
     if (!user) {
@@ -383,15 +363,6 @@ export const getUser = async (req, res) => {
 
     res.status(200).json(userObj);
   } catch (err) {
-    logger.error({
-      method: "GET",
-      status: 500,
-      message: err.message,
-      for: "GET USER",
-      user: req.user,
-      functionName: getUser.name,
-    });
-
     res.status(500).json({ message: { error: err.message } });
   }
 };

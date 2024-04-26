@@ -8,13 +8,12 @@ import { Group } from "../models/groupModel.js";
 import { Course } from "../models/courseModel.js";
 import exceljs from "exceljs";
 import moment from "moment";
+import { Student } from "../models/studentModel.js";
 
 // Create teacher
 
 export const createTeacher = async (req, res) => {
   const { email, password, role } = req.body;
-
-  console.log(req.body);
 
   try {
     const regexEmail = new RegExp(email || "", "i");
@@ -28,8 +27,11 @@ export const createTeacher = async (req, res) => {
     const existingTeacher = await Teacher.findOne({
       email: { $regex: regexEmail },
     });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+    });
 
-    if (existingAdmin || existingWorker || existingTeacher) {
+    if (existingAdmin || existingWorker || existingTeacher || existingStudent) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
@@ -217,10 +219,17 @@ export const updateTeacher = async (req, res) => {
       email: { $regex: regexEmail },
       _id: { $ne: id },
     });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+      _id: { $ne: id },
+    });
 
     console.log(existingTeacher);
 
-    if (email && (existingTeacher || existingAdmin || existingWorker)) {
+    if (
+      email &&
+      (existingTeacher || existingAdmin || existingWorker || existingStudent)
+    ) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
@@ -568,14 +577,14 @@ export const cancelTeacherChanges = async (req, res) => {
 };
 
 // Export excel file
-
 export const exportTeachersExcel = async (req, res) => {
   const { role = "teacher" } = req.query;
   const headerStyle = {
     font: { bold: true },
   };
+
   try {
-    const teachers = await Teacher.find({ role })
+    const teachers = await Teacher.find({ role, deleted: false })
       .populate("courses")
       .sort({ createdAt: -1 });
 
