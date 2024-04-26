@@ -12,11 +12,38 @@ import { Teacher } from "../models/teacherModel.js";
 import mongoose from "mongoose";
 import moment from "moment";
 import exceljs from "exceljs";
+import bcrypt from "bcrypt";
+import { Admin } from "../models/adminModel.js";
 
 // Create student
 export const createStudent = async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    const newStudent = new Student(req.body);
+    const regexEmail = new RegExp(email || "", "i");
+
+    const existingAdmin = await Admin.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingWorker = await Worker.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingTeacher = await Teacher.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+    });
+
+    if (existingAdmin || existingWorker || existingTeacher || existingStudent) {
+      return res.status(409).json({ key: "email-already-exist" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newStudent = new Student({ ...req.body, password: hashedPassword });
 
     await newStudent.save();
 
@@ -42,7 +69,7 @@ export const createStudent = async (req, res) => {
       },
     });
 
-    res.status(201).json(student);
+    res.status(201).json({ ...student.toObject(), password: "" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
@@ -288,11 +315,44 @@ export const getStudentsByCourseId = async (req, res) => {
 
 // Update student
 export const updateStudent = async (req, res) => {
+  const { email } = req.body;
   const { id } = req.params;
   const { id: userId, role } = req.user;
   let updatedData = req.body;
 
   try {
+    const regexEmail = new RegExp(email || "", "i");
+
+    const existingAdmin = await Admin.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingWorker = await Worker.findOne({
+      email: { $regex: regexEmail },
+    });
+    const existingTeacher = await Teacher.findOne({
+      email: { $regex: regexEmail },
+      _id: { $ne: id },
+    });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+      _id: { $ne: id },
+    });
+
+    if (
+      email &&
+      (existingTeacher || existingAdmin || existingWorker || existingStudent)
+    ) {
+      return res.status(409).json({ key: "email-already-exist" });
+    }
+
+    if (updatedData.password && updatedData.password.length > 5) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(updatedData.password, salt);
+      updatedData = { ...updatedData, password: hashedPassword };
+    } else {
+      delete updatedData.password;
+    }
+
     if (role === "worker") {
       const worker = await Worker.findById(userId);
 
@@ -305,8 +365,6 @@ export const updateStudent = async (req, res) => {
 
         const payload = new Student(updatedData);
         await payload.populate("courses groups.group");
-
-        console.log(payload, "ttttt");
 
         updatedData = { changes: payload.toObject() };
 
@@ -330,7 +388,7 @@ export const updateStudent = async (req, res) => {
       }
     }
 
-    const updatedStudent = await Student.findByIdAndUpdate(id, req.body, {
+    const updatedStudent = await Student.findByIdAndUpdate(id, updatedData, {
       new: true,
     })
       .populate("courses")
@@ -379,7 +437,7 @@ export const updateStudent = async (req, res) => {
       { $pull: { students: { student: updatedStudent._id } } }
     );
 
-    res.status(200).json(updatedStudent);
+    res.status(200).json({ ...updatedStudent.toObject(), password: "" });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
@@ -404,6 +462,41 @@ export const deleteStudent = async (req, res) => {
     }
 
     res.status(200).json(deletedStudent);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Update student password
+export const updateStudentPassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const { id } = req.user;
+
+  try {
+    const student = await Student.findById(id);
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found." });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      oldPassword,
+      student.password
+    );
+
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ key: "old-password-incorrect." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+      id,
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    res.status(200).json({ ...updatedStudent.toObject(), password: "" });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
@@ -502,7 +595,6 @@ export const cancelStudentChanges = async (req, res) => {
 };
 
 // Export word file
-
 export const exportStudentContract = async (req, res) => {
   const { studentId, groupId } = req.query;
 
@@ -577,7 +669,6 @@ export const exportStudentContract = async (req, res) => {
 };
 
 // Export excel file
-
 export const exportStudentsExcel = async (req, res) => {
   const whereComingList = [
     { name: "İnstagram Sponsorlu", key: "instagramSponsor" },
@@ -609,8 +700,9 @@ export const exportStudentsExcel = async (req, res) => {
   const headerStyle = {
     font: { bold: true },
   };
+
   try {
-    const students = await Student.find()
+    const students = await Student.find({ deleted: false })
       .populate("courses groups.group")
       .sort({ createdAt: -1 });
 

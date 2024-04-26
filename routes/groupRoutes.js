@@ -10,6 +10,7 @@ import {
   getGroupsForPagination,
   getGroupsWithCourseId,
   getGroupsWithMentorId,
+  getGroupsWithStudentId,
   getGroupsWithTeacherId,
   updateGroup,
 } from "../controllers/groupController.js";
@@ -20,6 +21,7 @@ const router = express.Router();
 router.get("/all", getGroups);
 router.get("/with-teacher", getGroupsWithTeacherId);
 router.get("/with-mentor", getGroupsWithMentorId);
+router.get("/with-student", getGroupsWithStudentId);
 router.get("/with-course", getGroupsWithCourseId);
 router.get("/pagination", getGroupsForPagination);
 router.post("/", createGroup);

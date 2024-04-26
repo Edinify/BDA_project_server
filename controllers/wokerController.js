@@ -1,4 +1,5 @@
 import { Admin } from "../models/adminModel.js";
+import { Student } from "../models/studentModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import { Worker } from "../models/workerModel.js";
 import bcrypt from "bcrypt";
@@ -19,8 +20,11 @@ export const createWorker = async (req, res) => {
     const existingTeacher = await Teacher.findOne({
       email: { $regex: regexEmail },
     });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+    });
 
-    if (existingAdmin || existingWorker || existingTeacher) {
+    if (existingAdmin || existingWorker || existingTeacher || existingStudent) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
@@ -32,9 +36,7 @@ export const createWorker = async (req, res) => {
 
     const workersCount = await Worker.countDocuments();
 
-    res
-      .status(201)
-      .json({ ...worker.toObject(), password: "" });
+    res.status(201).json({ ...worker.toObject(), password: "" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -42,7 +44,7 @@ export const createWorker = async (req, res) => {
 
 // Get workers
 export const getWorkers = async (req, res) => {
-  const { searchQuery,length } = req.query;
+  const { searchQuery, length } = req.query;
   const limit = 20;
 
   try {
@@ -64,10 +66,10 @@ export const getWorkers = async (req, res) => {
         .limit(limit)
         .select("-password");
 
-      totalLength = workersCount
+      totalLength = workersCount;
     } else {
       const workersCount = await Worker.countDocuments();
-      totalLength = workersCount
+      totalLength = workersCount;
 
       workers = await Worker.find()
         .skip(length || 0)
@@ -102,8 +104,14 @@ export const updateWorker = async (req, res) => {
     const existingTeacher = await Teacher.findOne({
       email: { $regex: regexEmail },
     });
+    const existingStudent = await Student.findOne({
+      email: { $regex: regexEmail },
+    });
 
-    if (email && (existingTeacher || existingAdmin || existingWorker)) {
+    if (
+      email &&
+      (existingTeacher || existingAdmin || existingWorker || existingStudent)
+    ) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 

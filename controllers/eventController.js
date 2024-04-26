@@ -1,8 +1,12 @@
 import { Event } from "../models/eventModel.js";
+import { google } from "googleapis";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Get events for pagination
 export const getEventsForPagination = async (req, res) => {
-  const { searchQuery,length } = req.query;
+  const { searchQuery, length } = req.query;
   const limit = 20;
 
   try {
@@ -22,10 +26,10 @@ export const getEventsForPagination = async (req, res) => {
         .skip(length || 0)
         .limit(limit);
 
-      totalLength = eventsCount
+      totalLength = eventsCount;
     } else {
       const eventsCount = await Event.countDocuments();
-      totalLength = eventsCount
+      totalLength = eventsCount;
       events = await Event.find()
         .skip(length || 0)
         .limit(limit);
@@ -141,6 +145,83 @@ export const cancelEventChanges = async (req, res) => {
     );
 
     res.status(200).json(event);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+// Event notification
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CLIENT_URL
+);
+
+const calendar = google.calendar({
+  version: "v3",
+  auth: process.env.GOOGLE_CLIENT_API_KEY,
+});
+
+export const redirectEventNotification = async (req, res) => {
+  console.log(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_CLIENT_URL,
+    process.env.GOOGLE_CLIENT_API_KEY
+  );
+  const scopes = [
+    "https://www.googleapis.com/auth/calendar",
+    "https://www.googleapis.com/auth/calendar.events",
+  ];
+  try {
+    const url = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: scopes,
+    });
+
+    res.redirect(url);
+  } catch (err) {
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const createEventNotification = async (req, res) => {
+  const code = req.query.code;
+  const { tokens } = await oauth2Client.getToken(code);
+
+  console.log(tokens);
+  oauth2Client.setCredentials(tokens);
+
+  res.send("working 123");
+};
+
+export const scheduleEvent = async (req, res) => {
+  const startDate = new Date();
+
+  startDate.setDate(startDate.getDate() - 3);
+
+  // console.log(oauth2Client);
+  try {
+    calendar.events.insert({
+      calendarId: "primary",
+      auth: oauth2Client,
+      requestBody: {
+        summary: "bla bla bla",
+        description: "bla bla bla",
+        start: {
+          dateTime: "2024-04-25T09:00:00-07:00",
+          timeZone: "Asia/Baku",
+        },
+        end: {
+          dateTime: "2024-04-26T09:00:00-07:00",
+          timeZone: "Asia/Baku",
+        },
+      },
+    });
+
+    res.send("done");
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

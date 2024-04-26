@@ -8,6 +8,15 @@ const studentSchema = new Schema(
       type: String,
       required: true,
     },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
     fin: {
       type: String,
     },
@@ -19,6 +28,10 @@ const studentSchema = new Schema(
     },
     phone: {
       type: String,
+    },
+    role: {
+      type: String,
+      default: "student",
     },
     courses: [
       {
