@@ -10,12 +10,10 @@ const studentSchema = new Schema(
     },
     email: {
       type: String,
-      required: true,
       unique: true,
     },
     password: {
       type: String,
-      required: true,
     },
     fin: {
       type: String,
@@ -133,8 +131,9 @@ const studentSchema = new Schema(
           },
         ],
         status: {
-          type: Boolean,
-          default: false,
+          type: String,
+          default: "continue",
+          enum: ["graduate", "continue", "stopped", "freeze"],
         },
         degree: {
           type: String,
