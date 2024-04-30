@@ -59,6 +59,9 @@ const studentSchema = new Schema(
         contractEndDate: {
           type: Date,
         },
+        contractId: {
+          type: Number,
+        },
         paymentStartDate: {
           type: Date,
         },
