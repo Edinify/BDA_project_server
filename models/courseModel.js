@@ -22,6 +22,9 @@ const courseSchema = new Schema(
         },
       },
     ],
+    lessonCount: {
+      type: Number,
+    },
     changes: {
       type: Object,
     },

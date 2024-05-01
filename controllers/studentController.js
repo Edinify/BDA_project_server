@@ -598,7 +598,6 @@ export const cancelStudentChanges = async (req, res) => {
 export const exportStudentContract = async (req, res) => {
   const { studentId, groupId } = req.query;
 
-  console.log("contract");
   try {
     const student = await Student.findById(studentId).populate({
       path: "groups.group",
@@ -610,6 +609,8 @@ export const exportStudentContract = async (req, res) => {
     const group = student.groups.find(
       (item) => item.group._id.toString() === groupId
     );
+    const date = new Date();
+    const currentYear = date.getFullYear();
 
     const data = {
       studentName: student?.fullName || "--",
@@ -629,6 +630,10 @@ export const exportStudentContract = async (req, res) => {
       paymentType: group?.payment?.paymentType || "--",
       discount: group?.discount || "--",
       phoneNumber: student?.phone || "--",
+      contractId: group?.contractId
+        ? `${group?.contractId}/${currentYear}`
+        : "--",
+      lessonCount: group?.group?.course?.lessonCount || "--",
     };
 
     console.log(data);

@@ -25,7 +25,7 @@ export const getActiveStudentsCount = async (req, res) => {
   try {
     const studentsCount = await Student.countDocuments({
       deleted: false,
-      "groups.status": false,
+      "groups.status": "continue",
     });
 
     res.status(200).json(studentsCount);
