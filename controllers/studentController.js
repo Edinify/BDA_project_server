@@ -35,13 +35,19 @@ export const createStudent = async (req, res) => {
       email: { $regex: regexEmail },
     });
 
-    if (existingAdmin || existingWorker || existingTeacher || existingStudent) {
+    if (
+      email &&
+      (existingAdmin || existingWorker || existingTeacher || existingStudent)
+    ) {
       return res.status(409).json({ key: "email-already-exist" });
     }
 
     const salt = await bcrypt.genSalt(10);
+    let hashedPassword;
 
-    const hashedPassword = await bcrypt.hash(password, salt);
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, salt);
+    }
 
     const newStudent = new Student({ ...req.body, password: hashedPassword });
 
@@ -86,6 +92,7 @@ export const getStudents = async (req, res) => {
     const students = await Student.find({
       fullName: { $regex: regexSearchQuery },
     })
+      .select("-password")
       .skip(parseInt(studentsCount || 0))
       .limit(parseInt(studentsCount || 0) + 30);
 
@@ -110,6 +117,7 @@ export const getActiveStudents = async (req, res) => {
       deleted: false,
       courses: { $in: courseId },
     })
+      .select("-password")
       .skip(parseInt(studentsCount || 0))
       .limit(parseInt(studentsCount || 0) + 30);
 
@@ -157,6 +165,7 @@ export const getStudentsForPagination = async (req, res) => {
         deleted: false,
         ...filterObj,
       })
+        .select("-password")
         .skip(length || 0)
         .limit(limit)
         .populate("courses")
@@ -177,6 +186,7 @@ export const getStudentsForPagination = async (req, res) => {
       });
       totalLength = studentsCount;
       students = await Student.find({ deleted: false, ...filterObj })
+        .select("-password")
         .skip(length || 0)
         .limit(limit)
         .populate("courses")
