@@ -4,7 +4,7 @@ import { Lead } from "../models/leadModal.js";
 // Get leads for pagination
 export const getLeadsForPagination = async (req, res) => {
   const { monthCount, startDate, endDate, length } = req.query;
-  const limit = 10;
+  const limit = 20;
 
   try {
     let targetDate;
