@@ -621,6 +621,13 @@ export const exportStudentContract = async (req, res) => {
     );
     const date = new Date();
     const currentYear = date.getFullYear();
+    const payments = group?.payments?.map((item) => ({
+      payment: item.payment,
+      paymentDate: item?.paymentDate
+        ? moment(item.paymentDate).locale("az").format("DD.MM.YYYY")
+        : "--",
+    }));
+
 
     const data = {
       studentName: student?.fullName || "--",
@@ -644,6 +651,7 @@ export const exportStudentContract = async (req, res) => {
         ? `${group?.contractId}/${currentYear}`
         : "--",
       lessonCount: group?.group?.course?.lessonCount || "--",
+      payments: payments,
     };
 
     console.log(data);
