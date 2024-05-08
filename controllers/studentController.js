@@ -229,9 +229,6 @@ export const getStudentsForPagination = async (req, res) => {
         const practics = await practicsLessonCount.exec();
         const main = await mainLessonCount.exec();
 
-        console.log(practics, "praktika");
-        console.log(main, "esas");
-
         return {
           ...student.toObject(),
           practicsQbCount: practics[0]?.count || 0,
@@ -627,7 +624,6 @@ export const exportStudentContract = async (req, res) => {
         ? moment(item.paymentDate).locale("az").format("DD.MM.YYYY")
         : "--",
     }));
-
 
     const data = {
       studentName: student?.fullName || "--",

@@ -157,7 +157,7 @@ export const getGroupsForPagination = async (req, res) => {
 
 // Create group
 export const createGroup = async (req, res) => {
-  const { name } = req.body;
+  const { name, status } = req.body;
 
   try {
     const regexName = new RegExp(name || "", "i");
@@ -176,9 +176,11 @@ export const createGroup = async (req, res) => {
 
     createLessons(newGroup);
 
+    const studentsStatus = status === "ended" ? "graduate" : "continue";
+
     await Student.updateMany(
       { _id: { $in: newGroup.students } },
-      { $push: { groups: { group: newGroup._id } } }
+      { $push: { groups: { group: newGroup._id, status: studentsStatus } } }
     );
 
     res.status(201).json(newGroup);
@@ -191,7 +193,7 @@ export const createGroup = async (req, res) => {
 // Update group
 export const updateGroup = async (req, res) => {
   const { id } = req.params;
-  const { name } = req.body;
+  const { name, status } = req.body;
   const { id: userId, role } = req.user;
   let updatedData = req.body;
 
@@ -263,6 +265,28 @@ export const updateGroup = async (req, res) => {
       },
       { $pull: { groups: { group: updatedGroup._id } } }
     );
+
+    if (oldGroup.status !== updatedGroup.status) {
+      const studentsStatus = status === "ended" ? "graduate" : "continue";
+      const targetStudents = await Student.find({
+        _id: { $in: studentsIds },
+      });
+
+      for (let student of targetStudents) {
+        const targetGroupItem = student.groups.find(
+          (item) => item.group.toString() === updatedGroup._id.toString()
+        );
+
+        if (
+          targetGroupItem &&
+          targetGroupItem.status !== "stopped" &&
+          targetGroupItem.status !== "freeze"
+        ) {
+          targetGroupItem.status = studentsStatus;
+          await student.save();
+        }
+      }
+    }
 
     const addedStudentsIds = studentsIds.reduce(
       (students, id) =>

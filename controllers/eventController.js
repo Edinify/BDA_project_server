@@ -23,6 +23,7 @@ export const getEventsForPagination = async (req, res) => {
       events = await Event.find({
         eventName: { $regex: regexSearchQuery },
       })
+        .sort({ date: 1 })
         .skip(length || 0)
         .limit(limit);
 
@@ -31,6 +32,7 @@ export const getEventsForPagination = async (req, res) => {
       const eventsCount = await Event.countDocuments();
       totalLength = eventsCount;
       events = await Event.find()
+        .sort({ date: 1 })
         .skip(length || 0)
         .limit(limit);
     }
