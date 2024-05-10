@@ -95,12 +95,15 @@ export const updateCourse = async (req, res) => {
   let updatedData = req.body;
 
   try {
-    const regexName = new RegExp(name || "", "i");
+    const regexName = new RegExp(`^${name.trim()}$` || "", "i");
 
     const existingCourse = await Course.findOne({
       name: { $regex: regexName },
       _id: { $ne: id },
     });
+
+    console.log(req.body);
+    console.log(existingCourse);
 
     if (existingCourse) {
       return res.status(409).json({ key: "course-already-exists" });

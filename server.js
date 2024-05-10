@@ -139,6 +139,8 @@ const connectToDatabase = async (uri, port) => {
     console.log("Connected to the database");
     app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
+      const courses = await Course.find();
+      // console.log(courses);
     });
   } else {
     console.error("Failed to connect to the database after multiple attempts");
