@@ -104,6 +104,19 @@ const studentSchema = new Schema(
         workStartDate: {
           type: Date,
         },
+        diplomaStatus: {
+          type: String,
+          enum: ["noneDefensed", "defensed", "done", "awarded"],
+          default: "noneDefensed",
+        },
+        diplomaDegree: {
+          type: String,
+          enum: ["certificate", "simple", "honor", "none"],
+          default: "none",
+        },
+        diplomaDate: {
+          type: Date,
+        },
         payments: [
           {
             payment: {

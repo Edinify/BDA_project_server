@@ -30,6 +30,7 @@ import careerRoutes from "./routes/careerRoutes.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import diplomaRoutes from "./routes/diplomaRoutes.js";
 // import updateButtonRoutes from "./routes/updateButtonRoutes.js";
 
 import {
@@ -91,6 +92,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/lead", leadRoutes);
 app.use("/api/event", eventRoutes);
+app.use("/api/diploma", diplomaRoutes);
 
 app.get("/", (req, res) => {
   res.send("hello");
@@ -141,8 +143,51 @@ const connectToDatabase = async (uri, port) => {
     console.log("Connected to the database");
     app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
-      const courses = await Course.find();
-      // console.log(courses);
+
+      // const pipeline = [
+      //   {
+      //     $match: {
+      //       "groups.0": { $exists: true },
+      //     },
+      //   },
+      //   {
+      //     $unwind: "$groups",
+      //   },
+      //   {
+      //     $match: {
+      //       "groups.group": new mongoose.Types.ObjectId(
+      //         "65bcafeb70712c3ffaba3f73"
+      //       ),
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: "groups",
+      //       localField: "groups.group",
+      //       foreignField: "_id",
+      //       as: "targetGroup",
+      //     },
+      //   },
+
+      //   {
+      //     $addFields: {
+      //       group: { $arrayElemAt: ["$targetGroup", 0] },
+      //       diplomaStatus: {
+      //         $ifNull: ["$groups.diplomaStatus", "noneDefensed"],
+      //       },
+      //       diplomaDegree: {
+      //         $ifNull: ["$groups.diplomaDegree", "none"],
+      //       },
+      //       diplomaDate: "$groups.diplomaDate",
+      //     },
+      //   },
+
+      //   { $unset: ["groups", "targetGroup"] },
+      // ];
+
+      // const students = await Student.aggregate(pipeline);
+
+      // console.log(student);
     });
   } else {
     console.error("Failed to connect to the database after multiple attempts");
