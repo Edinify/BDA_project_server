@@ -9,6 +9,7 @@ export const getDiplomas = async (req, res) => {
   const { searchQuery, groupId, length } = req.query;
   const limit = 20;
 
+  console.log(req.query);
   try {
     if (!groupId) {
       return res
@@ -20,7 +21,7 @@ export const getDiplomas = async (req, res) => {
     const filterObj = {
       fullName: { $regex: regexSearchQuery },
       "groups.0": { $exists: true },
-      "groups.group": groupId,
+      "groups.group": new mongoose.Types.ObjectId(groupId),
     };
 
     const pipeline = [
@@ -66,10 +67,12 @@ export const getDiplomas = async (req, res) => {
 
     const diplomas = await Student.aggregate(pipeline);
 
+    console.log(diplomas.length);
     res
       .status(200)
       .json({ diplomas, currentLength: +length + diplomas.length });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
