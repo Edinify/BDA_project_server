@@ -64,11 +64,11 @@ export const getDiplomas = async (req, res) => {
       { $unset: ["groups", "targetGroup"] },
     ];
 
-    const students = await Student.aggregate(pipeline);
+    const diplomas = await Student.aggregate(pipeline);
 
-    console.log(students);
-
-    res.status(200).json({ careers, currentLength: +length + students.length });
+    res
+      .status(200)
+      .json({ diplomas, currentLength: +length + diplomas.length });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
   }
