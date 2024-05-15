@@ -2,6 +2,7 @@ import { Student } from "../models/studentModel.js";
 import { v4 as uuidv4 } from "uuid";
 import exceljs from "exceljs";
 import moment from "moment";
+import mongoose from "mongoose";
 
 // Get careers
 export const getDiplomas = async (req, res) => {
