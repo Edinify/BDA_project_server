@@ -139,66 +139,36 @@ export const getStudentsForPagination = async (req, res) => {
   const limit = 20;
 
   try {
-    let totalLength;
-    let students;
-    let filterObj = {};
+    let filterObj = { deleted: false };
 
     if (status === "active") filterObj.status = true;
-
     if (status === "deactive") filterObj.status = false;
-
     if (courseId) filterObj.courses = courseId;
-
     if (groupId) filterObj["groups.group"] = groupId;
-
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");
-
-      const studentsCount = await Student.countDocuments({
-        fullName: { $regex: regexSearchQuery },
-        deleted: false,
-        ...filterObj,
-      });
-
-      students = await Student.find({
-        fullName: { $regex: regexSearchQuery },
-        deleted: false,
-        ...filterObj,
-      })
-        .select("-password")
-        .skip(length || 0)
-        .limit(limit)
-        .populate("courses")
-        .populate({
-          path: "groups.group",
-          populate: {
-            path: "course",
-            model: "Course",
-          },
-        })
-        .sort({ createdAt: -1 });
-
-      totalLength = studentsCount;
-    } else {
-      const studentsCount = await Student.countDocuments({
-        deleted: false,
-        ...filterObj,
-      });
-      totalLength = studentsCount;
-      students = await Student.find({ deleted: false, ...filterObj })
-        .select("-password")
-        .skip(length || 0)
-        .limit(limit)
-        .populate("courses")
-        .populate({
-          path: "groups.group",
-          populate: {
-            path: "course",
-            model: "Course",
-          },
-        })
-        .sort({ createdAt: -1 });
+      filterObj.fullName = { $regex: regexSearchQuery };
     }
+
+    const totalLength = await Student.countDocuments({
+      ...filterObj,
+    });
+
+    let students = await Student.find({
+      ...filterObj,
+    })
+      .select("-password")
+      .skip(length || 0)
+      .limit(limit)
+      .populate("courses")
+      .populate({
+        path: "groups.group",
+        populate: {
+          path: "course",
+          model: "Course",
+        },
+      })
+      .sort({ createdAt: -1 });
 
     students = await Promise.all(
       students.map(async (student) => {
@@ -226,8 +196,10 @@ export const getStudentsForPagination = async (req, res) => {
           { $group: { _id: null, count: { $sum: 1 } } },
         ]);
 
-        const practics = await practicsLessonCount.exec();
-        const main = await mainLessonCount.exec();
+        const [practics, main] = await Promise.all([
+          practicsLessonCount.exec(),
+          mainLessonCount.exec(),
+        ]);
 
         return {
           ...student.toObject(),

@@ -22,6 +22,7 @@ export const getDiplomas = async (req, res) => {
       fullName: { $regex: regexSearchQuery },
       "groups.0": { $exists: true },
       "groups.group": new mongoose.Types.ObjectId(groupId),
+      deleted: false,
     };
 
     const pipeline = [
@@ -61,13 +62,20 @@ export const getDiplomas = async (req, res) => {
           diplomaDate: "$groups.diplomaDate",
         },
       },
-
-      { $unset: ["groups", "targetGroup"] },
+      {
+        $project: {
+          _id: 1,
+          fullName: 1,
+          group: 1,
+          diplomaStatus: 1,
+          diplomaDegree: 1,
+          diplomaDate: 1,
+        },
+      },
     ];
 
     const diplomas = await Student.aggregate(pipeline);
 
-    console.log(diplomas.length);
     res
       .status(200)
       .json({ diplomas, currentLength: +length + diplomas.length });
@@ -79,6 +87,8 @@ export const getDiplomas = async (req, res) => {
 
 export const updateDiploma = async (req, res) => {
   const { diplomaStatus, diplomaDegree, diplomaDate, _id, group } = req.body;
+
+  console.log(req.body, "vbbbbbbbbbbbbbbvvvvvvvvv");
 
   try {
     const student = await Student.findById(_id);
@@ -107,6 +117,7 @@ export const updateDiploma = async (req, res) => {
     delete student.groups;
 
     const payload = {
+      _id: student._id,
       fullName: student.fullName,
       group: targetGroup.group,
       diplomaDegree: targetGroup.diplomaDegree,

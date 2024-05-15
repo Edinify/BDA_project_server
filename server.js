@@ -143,51 +143,6 @@ const connectToDatabase = async (uri, port) => {
     console.log("Connected to the database");
     app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
-
-      // const pipeline = [
-      //   {
-      //     $match: {
-      //       "groups.0": { $exists: true },
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$groups",
-      //   },
-      //   {
-      //     $match: {
-      //       "groups.group": new mongoose.Types.ObjectId(
-      //         "65bcafeb70712c3ffaba3f73"
-      //       ),
-      //     },
-      //   },
-      //   {
-      //     $lookup: {
-      //       from: "groups",
-      //       localField: "groups.group",
-      //       foreignField: "_id",
-      //       as: "targetGroup",
-      //     },
-      //   },
-
-      //   {
-      //     $addFields: {
-      //       group: { $arrayElemAt: ["$targetGroup", 0] },
-      //       diplomaStatus: {
-      //         $ifNull: ["$groups.diplomaStatus", "noneDefensed"],
-      //       },
-      //       diplomaDegree: {
-      //         $ifNull: ["$groups.diplomaDegree", "none"],
-      //       },
-      //       diplomaDate: "$groups.diplomaDate",
-      //     },
-      //   },
-
-      //   { $unset: ["groups", "targetGroup"] },
-      // ];
-
-      // const students = await Student.aggregate(pipeline);
-
-      // console.log(student);
     });
   } else {
     console.error("Failed to connect to the database after multiple attempts");
