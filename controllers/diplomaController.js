@@ -10,7 +10,7 @@ export const getDiplomas = async (req, res) => {
   const limit = 20;
 
   try {
-    if (groupId) {
+    if (!groupId) {
       return res
         .status(400)
         .json({ error: { message: "group is not selected!" } });
