@@ -11,6 +11,11 @@ async function getPayingStutdents() {
 
   const payingStudents = await Student.aggregate([
     {
+      $match: {
+        deleted: false,
+      },
+    },
+    {
       $project: {
         fullName: 1,
         groups: 1,
@@ -92,6 +97,11 @@ async function getPaymentsResults() {
   endOfDay.setHours(23, 59, 59, 999);
 
   const totalLatePaymentObj = await Student.aggregate([
+    {
+      $match: {
+        deleted: false,
+      },
+    },
     {
       $project: {
         fullName: 1,
@@ -185,6 +195,7 @@ export const getTutionFees = async (req, res) => {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
     const filterObj = {
       "groups.0": { $exists: true },
+      deleted: false,
     };
 
     if (paymentStatus === "latePayment") {
@@ -210,6 +221,10 @@ export const getTutionFees = async (req, res) => {
         },
       });
 
+    console.log(students, "feeeeeeeeeeeeeeesssssssssssssssss");
+    console.log(
+      "======================================================================"
+    );
     const tutionFees = students.reduce((list, student) => {
       const tutionFee = student.groups.map((item) => ({
         ...student.toObject(),
@@ -221,6 +236,8 @@ export const getTutionFees = async (req, res) => {
 
       return [...list, ...tutionFee];
     }, []);
+
+    // console.log(tutionFees, "feeeeeeeeeeeeeeesssssssssssssssss");
 
     const paymentsResults = await getPaymentsResults();
 
