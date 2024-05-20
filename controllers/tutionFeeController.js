@@ -105,7 +105,13 @@ async function getPaymentsResults() {
     {
       $project: {
         fullName: 1,
-        groups: 1,
+        groups: {
+          $filter: {
+            input: "$groups",
+            as: "group",
+            cond: { $in: ["$$group.status", ["graduate", "continue"]] },
+          },
+        },
       },
     },
     {
@@ -221,10 +227,6 @@ export const getTutionFees = async (req, res) => {
         },
       });
 
-    console.log(students, "feeeeeeeeeeeeeeesssssssssssssssss");
-    console.log(
-      "======================================================================"
-    );
     const tutionFees = students.reduce((list, student) => {
       const tutionFee = student.groups.map((item) => ({
         ...student.toObject(),
@@ -236,8 +238,6 @@ export const getTutionFees = async (req, res) => {
 
       return [...list, ...tutionFee];
     }, []);
-
-    // console.log(tutionFees, "feeeeeeeeeeeeeeesssssssssssssssss");
 
     const paymentsResults = await getPaymentsResults();
 
@@ -287,6 +287,12 @@ export const updateTuitionFee = async (req, res) => {
 
 // Export excel file
 export const exportTuitionFeeExcel = async (req, res) => {
+  const studentStatus = [
+    { key: "graduate", value: "Məzun" },
+    { key: "continue", value: "Davam edir" },
+    { key: "stopped", value: "Dayandırdı" },
+    { key: "freeze", value: "Dondurdu" },
+  ];
   const headerStyle = {
     font: { bold: true },
   };
@@ -314,8 +320,6 @@ export const exportTuitionFeeExcel = async (req, res) => {
 
       return [...list, ...tutionFee];
     }, []);
-
-    console.log(tutionFees);
 
     const workbook = new exceljs.Workbook();
 
@@ -363,7 +367,9 @@ export const exportTuitionFeeExcel = async (req, res) => {
         0
       );
 
-      const currPayment = totalBeforePayment - totalConfirmedPayment;
+      const currPayment = +(totalBeforePayment - totalConfirmedPayment).toFixed(
+        2
+      );
 
       sheet.addRow({
         fullName: item?.fullName ? item.fullName : "",
@@ -377,13 +383,17 @@ export const exportTuitionFeeExcel = async (req, res) => {
         course: item?.group?.course?.name || "",
         amount: item?.amount || "",
         totalAmount: item?.totalAmount || "",
-        totalRest: (item?.totalAmount || 0) - totalConfirmedPayment,
+        totalRest:
+          (item?.totalAmount || 0).toFixed(2) -
+          totalConfirmedPayment.toFixed(2),
         discountReason: item?.discountReason || "",
         discount: item?.discount ? `${item.discount}%` : "",
-        paid: totalConfirmedPayment || 0,
+        paid: totalConfirmedPayment > 0 ? totalConfirmedPayment : 0,
         paymentType: item?.payment?.paymentType || "",
-        currentPayment: currPayment,
-        status: item?.status ? "Davam edir" : "Məzun",
+        currentPayment: currPayment > 0 ? currPayment : 0,
+        status:
+          studentStatus.find((statusitem) => statusitem.key === item?.status)
+            ?.value || "",
       });
     });
 

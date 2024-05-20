@@ -124,7 +124,7 @@ export const getCoursesStatistics = async (req, res) => {
 
     const result = allCourses.map((course) => {
       const currentCourseItem = coursesStatistics.find(
-        (item) => item._id.toString() === course._id.toString()
+        (item) => item._id?.toString() === course._id.toString()
       );
       if (currentCourseItem) {
         return { courseName: course.name, value: currentCourseItem.count };
