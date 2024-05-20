@@ -299,6 +299,7 @@ export const updateStudent = async (req, res) => {
   const { id: userId, role } = req.user;
   let updatedData = req.body;
 
+  console.log(req.body);
   try {
     const regexEmail = new RegExp(email || "", "i");
 
