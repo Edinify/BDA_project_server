@@ -135,9 +135,11 @@ export const getActiveStudents = async (req, res) => {
 
 // Get students for pagination
 export const getStudentsForPagination = async (req, res) => {
-  const { searchQuery, status, courseId, groupId, length } = req.query;
+  const { searchQuery, status, courseId, groupId, length, studentGroupStatus } =
+    req.query;
   const limit = 20;
 
+  console.log(req.query);
   try {
     let filterObj = { deleted: false };
 
@@ -149,6 +151,16 @@ export const getStudentsForPagination = async (req, res) => {
       const regexSearchQuery = new RegExp(searchQuery, "i");
       filterObj.fullName = { $regex: regexSearchQuery };
     }
+    if (studentGroupStatus) {
+      if (studentGroupStatus === "wait") {
+        console.log("wait okay");
+        filterObj.groups = { $size: 0 };
+      } else {
+        filterObj["groups.status"] = studentGroupStatus;
+      }
+    }
+
+    console.log(filterObj);
 
     const totalLength = await Student.countDocuments({
       ...filterObj,
@@ -576,6 +588,91 @@ export const cancelStudentChanges = async (req, res) => {
 
 // Export word file
 export const exportStudentContract = async (req, res) => {
+  const { studentId, groupId } = req.query;
+
+  try {
+    const student = await Student.findById(studentId).populate({
+      path: "groups.group",
+      populate: {
+        path: "course",
+        model: "Course",
+      },
+    });
+    const group = student.groups.find(
+      (item) => item.group._id.toString() === groupId
+    );
+    const date = new Date();
+    const currentYear = date.getFullYear();
+    const payments = group?.payments?.map((item) => ({
+      payment: item.payment,
+      paymentDate: item?.paymentDate
+        ? moment(item.paymentDate).locale("az").format("DD.MM.YYYY")
+        : "--",
+    }));
+
+    const data = {
+      studentName: student?.fullName || "--",
+      contractDate: group?.contractStartDate
+        ? moment(group.contractStartDate).locale("az").format("DD.MM.YYYY")
+        : "--",
+      contractDateSecond: group?.contractStartDate
+        ? moment(group.contractStartDate)
+            .locale("az")
+            .format(`"DD" MMMM YYYY[-ci il]`)
+        : "--",
+      fin: student?.fin || "--",
+      seria: student?.seria || "--",
+      course: group?.group?.course?.name || "--",
+      totalAmount: group?.totalAmount || "--",
+      monthlyPayment: group?.payments[0]?.payment || "--",
+      paymentType: group?.payment?.paymentType || "--",
+      discount: group?.discount || "--",
+      phoneNumber: student?.phone || "--",
+      contractId: group?.contractId
+        ? `${group?.contractId}/${currentYear}`
+        : "--",
+      lessonCount: group?.group?.course?.lessonCount || "--",
+      payments: payments,
+    };
+
+    console.log(data);
+
+    const content = await fs.readFile(
+      path.resolve(process.cwd(), "templates", "student.docx"),
+      "binary"
+    );
+
+    const zip = new PizZip(content);
+
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
+
+    doc.render(data);
+
+    const buffer = doc.getZip().generate({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+    });
+
+    // Write the output document to a file
+    await fs.writeFile(
+      path.resolve(process.cwd(), "exports", "exported_document.docx"),
+      buffer
+    );
+
+    res.download(
+      path.resolve(process.cwd(), "exports", "exported_document.docx"),
+      "exported_document.docx"
+    );
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
+export const exportStudentContractSecond = async (req, res) => {
   const { studentId, groupId } = req.query;
 
   try {

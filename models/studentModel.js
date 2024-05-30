@@ -45,7 +45,7 @@ const studentSchema = new Schema(
     whereSend: {
       type: String,
       // enum: ["instagram", "referral", "event", "externalAds", "other"],
-      default: "other",
+      default: "sale",
     },
     groups: [
       {
