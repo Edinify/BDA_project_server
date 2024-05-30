@@ -4,6 +4,9 @@ const Schema = mongoose.Schema;
 
 const consultationSchema = new Schema(
   {
+    studentId: {
+      type: Schema.Types.ObjectId,
+    },
     contactDate: {
       type: Date,
       required: true,

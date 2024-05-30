@@ -1,4 +1,6 @@
+import mongoose, { Mongoose } from "mongoose";
 import { Consultation } from "../models/consultationModel.js";
+import { Student } from "../models/studentModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
 import { Worker } from "../models/workerModel.js";
 
@@ -102,8 +104,24 @@ export const updateConsultation = async (req, res) => {
       return res.status(404).json({ message: "Consultation not found" });
     }
 
+    if (
+      updatedConsultation.status === "sold" &&
+      !updatedConsultation?.studentId
+    ) {
+      const studentData = {
+        fullName: updatedConsultation.studentName,
+        courses: [updatedConsultation.course._id],
+      };
+
+      const newStudent = new Student(studentData);
+      await newStudent.save();
+      await Consultation.findByIdAndUpdate(updatedConsultation._id, {
+        studentId: newStudent._id,
+      });
+    }
     res.status(200).json(updatedConsultation);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
