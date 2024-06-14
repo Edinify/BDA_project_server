@@ -101,7 +101,7 @@ export const getLatePayment = async (req, res) => {
     endDate: endOfDay,
   };
 
-  if (!allDate) {
+  if (!allDate && (monthCount || startDate || endDate)) {
     targetDate = calcDate(monthCount, startDate, endDate);
 
     if (targetDate.endDate > endOfDay) {
