@@ -303,19 +303,19 @@ export const getPaidAmount = async (req, res) => {
 export const getToBePayment = async (req, res) => {
   const { monthCount, startDate, endDate, allDate } = req.query;
 
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-  let targetDate = {
-    endDate: endOfDay,
-  };
+  // const endOfDay = new Date();
+  // endOfDay.setHours(23, 59, 59, 999);
+  // let targetDate = {
+  //   endDate: endOfDay,
+  // };
 
-  if (!allDate && (monthCount || startDate || endDate)) {
-    targetDate = calcDate(monthCount, startDate, endDate);
+  // if (!allDate && (monthCount || startDate || endDate)) {
+  //   targetDate = calcDate(monthCount, startDate, endDate);
 
-    if (targetDate.endDate > endOfDay) {
-      targetDate.endDate = endOfDay;
-    }
-  }
+  //   if (targetDate.endDate > endOfDay) {
+  //     targetDate.endDate = endOfDay;
+  //   }
+  // }
 
   try {
     const totalLatePaymentObj = await Student.aggregate([
