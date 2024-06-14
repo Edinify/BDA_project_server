@@ -237,7 +237,7 @@ export const getPaidAmount = async (req, res) => {
 
   let targetDate = {};
 
-  if (currentDay) {
+  if (currentDay || (!monthCount && !startDate && !endDate)) {
     const currentStartDate = new Date();
     const currentEndDate = new Date();
     currentStartDate.setHours(0, 0, 0, 0);
@@ -279,7 +279,9 @@ export const getPaidAmount = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalPaidAmount: { $sum: "$groups.paids.payment" },
+          totalPaidAmount: {
+            $ifNull: ["$totalPaidAmount", 0],
+          },
         },
       },
       {
@@ -298,6 +300,8 @@ export const getPaidAmount = async (req, res) => {
     res.status(500).json({ message: { error: err.message } });
   }
 };
+
+// Get total payment
 
 // get tution fees
 export const getTutionFees = async (req, res) => {
