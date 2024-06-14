@@ -109,121 +109,126 @@ export const getLatePayment = async (req, res) => {
     }
   }
 
-  const totalLatePaymentObj = await Student.aggregate([
-    {
-      $match: {
-        deleted: false,
+  try {
+    const totalLatePaymentObj = await Student.aggregate([
+      {
+        $match: {
+          deleted: false,
+        },
       },
-    },
-    {
-      $project: {
-        fullName: 1,
-        groups: {
-          $filter: {
-            input: "$groups",
-            as: "group",
-            cond: { $in: ["$$group.status", ["graduate", "continue"]] },
+      {
+        $project: {
+          fullName: 1,
+          groups: {
+            $filter: {
+              input: "$groups",
+              as: "group",
+              cond: { $in: ["$$group.status", ["graduate", "continue"]] },
+            },
           },
         },
       },
-    },
-    {
-      $addFields: {
-        totalPayments: {
-          $sum: {
-            $map: {
-              input: "$groups",
-              as: "group",
-              in: {
-                $sum: {
-                  $map: {
-                    input: "$$group.payments",
-                    as: "payment",
-                    in: {
-                      $cond: [
-                        {
-                          $and: [
-                            {
-                              $lte: [
-                                "$$payment.paymentDate",
-                                targetDate.endDate,
-                              ],
-                            },
-                            {
-                              $cond: [
-                                { $ifNull: [targetDate.startDate, false] },
-                                {
-                                  $gte: [
-                                    "$$payment.paymentDate",
-                                    targetDate.startDate,
-                                  ],
-                                },
-                                true,
-                              ],
-                            },
-                          ],
-                        },
-                        "$$payment.payment",
-                        0,
-                      ],
+      {
+        $addFields: {
+          totalPayments: {
+            $sum: {
+              $map: {
+                input: "$groups",
+                as: "group",
+                in: {
+                  $sum: {
+                    $map: {
+                      input: "$$group.payments",
+                      as: "payment",
+                      in: {
+                        $cond: [
+                          {
+                            $and: [
+                              {
+                                $lte: [
+                                  "$$payment.paymentDate",
+                                  targetDate.endDate,
+                                ],
+                              },
+                              {
+                                $cond: [
+                                  { $ifNull: [targetDate.startDate, false] },
+                                  {
+                                    $gte: [
+                                      "$$payment.paymentDate",
+                                      targetDate.startDate,
+                                    ],
+                                  },
+                                  true,
+                                ],
+                              },
+                            ],
+                          },
+                          "$$payment.payment",
+                          0,
+                        ],
+                      },
                     },
                   },
                 },
               },
             },
           },
-        },
-        totalPaids: {
-          $sum: {
-            $map: {
-              input: "$groups",
-              as: "group",
-              in: {
-                $ifNull: [
-                  {
-                    $sum: {
-                      $map: {
-                        input: {
-                          $filter: {
-                            input: "$$group.paids",
-                            as: "paid",
-                            cond: { $eq: ["$$paid.confirmed", true] },
+          totalPaids: {
+            $sum: {
+              $map: {
+                input: "$groups",
+                as: "group",
+                in: {
+                  $ifNull: [
+                    {
+                      $sum: {
+                        $map: {
+                          input: {
+                            $filter: {
+                              input: "$$group.paids",
+                              as: "paid",
+                              cond: { $eq: ["$$paid.confirmed", true] },
+                            },
                           },
+                          as: "paid",
+                          in: "$$paid.payment",
                         },
-                        as: "paid",
-                        in: "$$paid.payment",
                       },
                     },
-                  },
-                  0,
-                ],
+                    0,
+                  ],
+                },
               },
             },
           },
         },
       },
-    },
-    {
-      $addFields: {
-        balance: { $subtract: ["$totalPayments", "$totalPaids"] },
+      {
+        $addFields: {
+          balance: { $subtract: ["$totalPayments", "$totalPaids"] },
+        },
       },
-    },
-    {
-      $match: {
-        balance: { $gt: 0 },
+      {
+        $match: {
+          balance: { $gt: 0 },
+        },
       },
-    },
-    {
-      $group: {
-        _id: null,
-        totalBalance: { $sum: "$balance" },
+      {
+        $group: {
+          _id: null,
+          totalBalance: { $sum: "$balance" },
+        },
       },
-    },
-  ]);
+    ]);
 
-  const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
+    const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
 
-  return { totalLatePayment };
+    res.status(200).json(totalLatePayment);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
 };
 
 // get tution fees
