@@ -279,9 +279,7 @@ export const getPaidAmount = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalPaidAmount: {
-            $ifNull: ["$totalPaidAmount", 0],
-          },
+          totalPaidAmount: { $sum: "$groups.paids.payment" },
         },
       },
       {
