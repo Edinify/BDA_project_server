@@ -68,6 +68,9 @@ const studentSchema = new Schema(
         payment: {
           type: Object,
         },
+        paymentPart: {
+          type: Number,
+        },
         amount: {
           type: Number,
         },
