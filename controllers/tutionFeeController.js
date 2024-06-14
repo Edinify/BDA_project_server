@@ -231,6 +231,74 @@ export const getLatePayment = async (req, res) => {
   }
 };
 
+// Get paid amount
+export const getPaidAmount = async (req, res) => {
+  const { monthCount, startDate, endDate, currentDay } = req.query;
+
+  let targetDate = {};
+
+  if (currentDay) {
+    const currentStartDate = new Date();
+    const currentEndDate = new Date();
+    currentStartDate.setHours(0, 0, 0, 0);
+    currentEndDate.setHours(23, 59, 59, 999);
+
+    targetDate.startDate = currentStartDate;
+    targetDate.endDate = currentEndDate;
+  } else {
+    targetDate = calcDate(monthCount, startDate, endDate);
+  }
+
+  try {
+    const paidAmounts = await Student.aggregate([
+      {
+        $match: {
+          deleted: false,
+        },
+      },
+      {
+        $project: {
+          groups: 1,
+        },
+      },
+      {
+        $unwind: "$groups",
+      },
+      {
+        $unwind: "$groups.paids",
+      },
+      {
+        $match: {
+          "groups.paids.confirmed": true,
+          "groups.paids.paymentDate": {
+            $gte: targetDate.startDate,
+            $lte: targetDate.endDate,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalPaidAmount: { $sum: "$groups.paids.payment" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          totalPaidAmount: 1,
+        },
+      },
+    ]);
+
+    console.log(paidAmounts);
+
+    res.status(200).json(paidAmounts.totalPaidAmount);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
+
 // get tution fees
 export const getTutionFees = async (req, res) => {
   const { searchQuery, groupId, courseId, paymentStatus, length } = req.query;
