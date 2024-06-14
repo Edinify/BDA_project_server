@@ -2,48 +2,134 @@ import { Student } from "../models/studentModel.js";
 import { v4 as uuidv4 } from "uuid";
 import exceljs from "exceljs";
 import moment from "moment";
+import mongoose from "mongoose";
 
 // Get careers
+
 export const getCareers = async (req, res) => {
-  const { searchQuery, courseId, groupId, length } = req.query;
+  const { searchQuery, courseId, groupId, length, studentGroupStatus } =
+    req.query;
   const limit = 20;
 
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
-    const filterObj = {
-      fullName: { $regex: regexSearchQuery },
-      "groups.0": { $exists: true },
-    };
 
-    if (courseId) filterObj.courses = courseId;
+    const pipeline = [
+      {
+        $match: {
+          fullName: { $regex: regexSearchQuery },
+          "groups.0": { $exists: true },
+        },
+      },
+      {
+        $unwind: "$groups",
+      },
+      {
+        $lookup: {
+          from: "groups",
+          localField: "groups.group",
+          foreignField: "_id",
+          as: "groups.group",
+        },
+      },
+      {
+        $unwind: "$groups.group",
+      },
+      {
+        $lookup: {
+          from: "courses",
+          localField: "groups.group.course",
+          foreignField: "_id",
+          as: "groups.group.course",
+        },
+      },
+      {
+        $unwind: "$groups.group.course",
+      },
+    ];
 
-    if (groupId) filterObj["groups.group"] = groupId;
-
-    const students = await Student.find(filterObj)
-      .skip(length || 0)
-      .limit(limit)
-      .populate({
-        path: "groups.group",
-        populate: {
-          path: "course",
-          module: "Course",
+    if (courseId) {
+      pipeline.push({
+        $match: {
+          "groups.group.course._id": new mongoose.Types.ObjectId(courseId),
         },
       });
+    }
 
-    const careers = students.reduce((list, student) => {
-      const career = student.groups.map((item) => ({
-        ...student.toObject(),
-        groups: null,
-        ...item.toObject(),
-        studentId: student._id,
-        _id: uuidv4(),
-      }));
+    if (groupId) {
+      pipeline.push({
+        $match: {
+          "groups.group._id": new mongoose.Types.ObjectId(groupId),
+        },
+      });
+    }
 
-      return [...list, ...career];
-    }, []);
+    if (studentGroupStatus) {
+      pipeline.push({
+        $match: {
+          "groups.status": studentGroupStatus,
+        },
+      });
+    }
 
-    res.status(200).json({ careers, currentLength: +length + students.length });
+    pipeline.push(
+      {
+        $skip: parseInt(length) || 0,
+      },
+      {
+        $limit: limit,
+      },
+      {
+        $addFields: {
+          _id: {
+            $concat: [
+              { $toString: "$groups.group._id" },
+              "-",
+              { $toString: "$_id" },
+            ],
+          },
+          studentId: "$_id",
+          group: "$groups.group",
+          contractStartDate: "$groups.contractStartDate",
+          contractEndDate: "$groups.contractEndDate",
+          part: "$groups.part",
+          amount: "$groups.amount",
+          totalAmount: "$groups.totalAmount",
+          discountReason: "$groups.discountReason",
+          discount: "$groups.discount",
+          cvLink: "$groups.cvLink",
+          portfolioLink: "$groups.portfolioLink",
+          workStatus: "$groups.workStatus",
+          previousWorkPlace: "$groups.previousWorkPlace",
+          previousWorkPosition: "$groups.previousWorkPosition",
+          currentWorkPlace: "$groups.currentWorkPlace",
+          currentWorkPosition: "$groups.currentWorkPosition",
+          workStartDate: "$groups.workStartDate",
+          diplomaStatus: "$groups.diplomaStatus",
+          diplomaDegree: "$groups.diplomaDegree",
+          diplomaDate: "$groups.diplomaDate",
+          payments: "$groups.payments",
+          paids: "$groups.paids",
+          status: "$groups.status",
+          degree: "$groups.degree",
+        },
+      },
+      {
+        $project: {
+          groups: 0,
+        },
+      }
+    );
+
+    const students = await Student.aggregate(pipeline);
+
+    console.log(students[0]);
+    res.status(200).json({
+      careers: students,
+      currentLength: +length + students.length,
+    });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: { error: err.message } });
   }
 };
@@ -188,7 +274,7 @@ export const exportCareersExcel = async (req, res) => {
       { header: "CV link", key: "cvLink", width: 30 },
       { header: "Portfolio link", key: "portfolioLink", width: 30 },
       { header: "Dərsə başlama tarixi", key: "contractStartDate", width: 21 },
-      { header: "Dərsi bitirmə tarixi", key: "contractEndDate", width: 21},
+      { header: "Dərsi bitirmə tarixi", key: "contractEndDate", width: 21 },
       { header: "Bizi haradan eşidiblər", key: "whereComing", width: 25 },
       { header: "Haradan göndərilib", key: "whereSend", width: 35 },
       { header: "Əvvəlki iş yeri", key: "previousWorkPlace", width: 30 },

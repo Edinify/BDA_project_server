@@ -91,10 +91,23 @@ async function getPayingStutdents() {
   return payingStudents.map((item) => item._id);
 }
 
-// Get payment results
-async function getPaymentsResults() {
+// Get late payment
+export const getLatePayment = async (req, res) => {
+  const { monthCount, startDate, endDate, allDate } = req.query;
+
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
+  let targetDate = {
+    endDate: endOfDay,
+  };
+
+  if (!allDate) {
+    targetDate = calcDate(monthCount, startDate, endDate);
+
+    if (targetDate.endDate > endOfDay) {
+      targetDate.endDate = endOfDay;
+    }
+  }
 
   const totalLatePaymentObj = await Student.aggregate([
     {
@@ -128,7 +141,28 @@ async function getPaymentsResults() {
                     as: "payment",
                     in: {
                       $cond: [
-                        { $lte: ["$$payment.paymentDate", endOfDay] },
+                        {
+                          $and: [
+                            {
+                              $lte: [
+                                "$$payment.paymentDate",
+                                targetDate.endDate,
+                              ],
+                            },
+                            {
+                              $cond: [
+                                { $ifNull: [targetDate.startDate, false] },
+                                {
+                                  $gte: [
+                                    "$$payment.paymentDate",
+                                    targetDate.startDate,
+                                  ],
+                                },
+                                true,
+                              ],
+                            },
+                          ],
+                        },
                         "$$payment.payment",
                         0,
                       ],
@@ -190,7 +224,7 @@ async function getPaymentsResults() {
   const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
 
   return { totalLatePayment };
-}
+};
 
 // get tution fees
 export const getTutionFees = async (req, res) => {
@@ -239,12 +273,9 @@ export const getTutionFees = async (req, res) => {
       return [...list, ...tutionFee];
     }, []);
 
-    const paymentsResults = await getPaymentsResults();
-
     res.status(200).json({
       tutionFees,
       currentLength: +length + students.length,
-      paymentsResults,
     });
   } catch (err) {
     console.log(err);
