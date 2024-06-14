@@ -299,7 +299,112 @@ export const getPaidAmount = async (req, res) => {
   }
 };
 
-// Get total payment
+// Get to be paid
+export const getToBePayment = async (req, res) => {
+  const { monthCount, startDate, endDate, allDate } = req.query;
+
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+  let targetDate = {
+    endDate: endOfDay,
+  };
+
+  if (!allDate && (monthCount || startDate || endDate)) {
+    targetDate = calcDate(monthCount, startDate, endDate);
+
+    if (targetDate.endDate > endOfDay) {
+      targetDate.endDate = endOfDay;
+    }
+  }
+
+  try {
+    const totalLatePaymentObj = await Student.aggregate([
+      {
+        $match: {
+          deleted: false,
+        },
+      },
+      {
+        $project: {
+          fullName: 1,
+          groups: {
+            $filter: {
+              input: "$groups",
+              as: "group",
+              cond: { $in: ["$$group.status", ["graduate", "continue"]] },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          totalPayments: {
+            $sum: {
+              $map: {
+                input: "$groups",
+                as: "group",
+                in: {
+                  $sum: "$$group.payments.payment",
+                },
+              },
+            },
+          },
+          totalPaids: {
+            $sum: {
+              $map: {
+                input: "$groups",
+                as: "group",
+                in: {
+                  $ifNull: [
+                    {
+                      $sum: {
+                        $map: {
+                          input: {
+                            $filter: {
+                              input: "$$group.paids",
+                              as: "paid",
+                              cond: { $eq: ["$$paid.confirmed", true] },
+                            },
+                          },
+                          as: "paid",
+                          in: "$$paid.payment",
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          balance: { $subtract: ["$totalPayments", "$totalPaids"] },
+        },
+      },
+      {
+        $match: {
+          balance: { $gt: 0 },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalBalance: { $sum: "$balance" },
+        },
+      },
+    ]);
+
+    const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
+
+    res.status(200).json(totalLatePayment);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: { error: err.message } });
+  }
+};
 
 // get tution fees
 export const getTutionFees = async (req, res) => {
