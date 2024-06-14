@@ -109,6 +109,8 @@ export const getLatePayment = async (req, res) => {
     }
   }
 
+  console.log(targetDate);
+
   try {
     const totalLatePaymentObj = await Student.aggregate([
       {
@@ -222,6 +224,10 @@ export const getLatePayment = async (req, res) => {
       },
     ]);
 
+    if (totalLatePaymentObj.length === 0) {
+      return res.status(200).json(0);
+    }
+
     const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
 
     res.status(200).json(totalLatePayment);
@@ -234,7 +240,6 @@ export const getLatePayment = async (req, res) => {
 // Get paid amount
 export const getPaidAmount = async (req, res) => {
   const { monthCount, startDate, endDate, currentDay } = req.query;
-
   let targetDate = {};
 
   if (currentDay || (!monthCount && !startDate && !endDate)) {
@@ -290,9 +295,13 @@ export const getPaidAmount = async (req, res) => {
       },
     ]);
 
-    console.log(paidAmounts);
+    if (paidAmounts.length === 0) {
+      return res.status(200).json(0);
+    }
 
-    res.status(200).json(paidAmounts.totalPaidAmount);
+    const result = paidAmounts[0].totalPaidAmount.toFixed(2);
+
+    res.status(200).json(result);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });
@@ -303,22 +312,15 @@ export const getPaidAmount = async (req, res) => {
 export const getToBePayment = async (req, res) => {
   const { monthCount, startDate, endDate, allDate } = req.query;
 
-  // const endOfDay = new Date();
-  // endOfDay.setHours(23, 59, 59, 999);
-  // let targetDate = {
-  //   endDate: endOfDay,
-  // };
+  let targetDate = {};
 
-  // if (!allDate && (monthCount || startDate || endDate)) {
-  //   targetDate = calcDate(monthCount, startDate, endDate);
-
-  //   if (targetDate.endDate > endOfDay) {
-  //     targetDate.endDate = endOfDay;
-  //   }
-  // }
+  console.log(req.query);
+  if (monthCount || startDate || endDate) {
+    targetDate = calcDate(monthCount, startDate, endDate);
+  }
 
   try {
-    const totalLatePaymentObj = await Student.aggregate([
+    const totalPayment = await Student.aggregate([
       {
         $match: {
           deleted: false,
@@ -344,62 +346,57 @@ export const getToBePayment = async (req, res) => {
                 input: "$groups",
                 as: "group",
                 in: {
-                  $sum: "$$group.payments.payment",
-                },
-              },
-            },
-          },
-          totalPaids: {
-            $sum: {
-              $map: {
-                input: "$groups",
-                as: "group",
-                in: {
-                  $ifNull: [
-                    {
-                      $sum: {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: "$$group.paids",
-                              as: "paid",
-                              cond: { $eq: ["$$paid.confirmed", true] },
-                            },
+                  $sum: {
+                    $map: {
+                      input: "$$group.payments",
+                      as: "payment",
+                      in: {
+                        $cond: [
+                          !allDate,
+                          {
+                            $cond: [
+                              {
+                                $and: [
+                                  {
+                                    $lte: [
+                                      "$$payment.paymentDate",
+                                      targetDate.endDate,
+                                    ],
+                                  },
+                                  {
+                                    $gte: [
+                                      "$$payment.paymentDate",
+                                      targetDate.startDate,
+                                    ],
+                                  },
+                                ],
+                              },
+                              "$$payment.payment",
+                              0,
+                            ],
                           },
-                          as: "paid",
-                          in: "$$paid.payment",
-                        },
+                          "$$payment.payment",
+                        ],
                       },
                     },
-                    0,
-                  ],
+                  },
                 },
               },
             },
           },
-        },
-      },
-      {
-        $addFields: {
-          balance: { $subtract: ["$totalPayments", "$totalPaids"] },
-        },
-      },
-      {
-        $match: {
-          balance: { $gt: 0 },
         },
       },
       {
         $group: {
           _id: null,
-          totalBalance: { $sum: "$balance" },
+          total: { $sum: "$totalPayments" },
         },
       },
     ]);
 
-    const totalLatePayment = totalLatePaymentObj[0].totalBalance.toFixed(2);
+    const result = totalPayment[0].total.toFixed(2);
 
-    res.status(200).json(totalLatePayment);
+    res.status(200).json(result);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: { error: err.message } });

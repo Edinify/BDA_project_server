@@ -144,27 +144,29 @@ const connectToDatabase = async (uri, port) => {
     app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
 
-        // await Student.updateMany(
-        //   { 'groups.payment.part': { $exists: true } },
-        //   [
-        //     {
-        //       $set: {
-        //         'groups': {
-        //           $map: {
-        //             input: '$groups',
-        //             as: 'group',
-        //             in: {
-        //               $mergeObjects: [
-        //                 '$$group',
-        //                 { paymentPart: '$$group.payment.part' }
-        //               ]
-        //             }
-        //           }
-        //         }
-        //       }
-        //     }
-        //   ]
-        // );
+      // await Student.updateMany(
+      //   { 'groups.payment.part': { $exists: true } },
+      //   [
+      //     {
+      //       $set: {
+      //         'groups': {
+      //           $map: {
+      //             input: '$groups',
+      //             as: 'group',
+      //             in: {
+      //               $mergeObjects: [
+      //                 '$$group',
+      //                 { paymentPart: '$$group.payment.part' }
+      //               ]
+      //             }
+      //           }
+      //         }
+      //       }
+      //     }
+      //   ]
+      // );
+
+      console.log("done");
     });
   } else {
     console.error("Failed to connect to the database after multiple attempts");
