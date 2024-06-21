@@ -4,48 +4,25 @@ const Schema = mongoose.Schema;
 
 const notificationSchema = new Schema(
   {
-    role: {
+    title: {
       type: String,
-      enum: ["birthday", "count", "update-table", "fine"],
+      enum: ["event"],
     },
-    student: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Student",
+    message: {
+      type: String,
     },
-    teacher: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Teacher",
-    },
-    isViewedAdmins: {
-      type: [
-        {
-          admin: {
-            type: mongoose.Schema.Types.ObjectId,
-          },
-          viewed: {
-            type: Boolean,
-            default: false,
-          },
+    recipients: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
         },
-      ],
-    },
-    isViewedTeachers: {
-      type: [
-        {
-          teacher: {
-            type: mongoose.Schema.Types.ObjectId,
-          },
-          viewed: {
-            type: Boolean,
-            default: false,
-          },
+        viewed: {
+          type: Boolean,
+          default: false,
         },
-      ],
-    },
-    isViewedStudent: {
-      type: Boolean,
-      default: false,
-    },
+      },
+    ],
   },
   { timestamps: true }
 );

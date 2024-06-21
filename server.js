@@ -3,6 +3,8 @@ import express from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 import studentRoutes from "./routes/studentRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
@@ -31,22 +33,6 @@ import salesRoutes from "./routes/salesRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import diplomaRoutes from "./routes/diplomaRoutes.js";
-// import updateButtonRoutes from "./routes/updateButtonRoutes.js";
-
-import {
-  createNotificationForBirthdayWithCron,
-  deleteNotificationsForBirthday,
-} from "./controllers/notificationController.js";
-import { calcDate } from "./calculate/calculateDate.js";
-
-import cron from "node-cron";
-import logger from "./config/logger.js";
-import { Lesson } from "./models/lessonModel.js";
-import router from "./routes/syllabusRoutes.js";
-import { Student } from "./models/studentModel.js";
-import { Group } from "./models/groupModel.js";
-import { getWeeklyGroupTable } from "./controllers/dashboardController.js";
-import { Course } from "./models/courseModel.js";
 
 dotenv.config();
 
@@ -54,6 +40,7 @@ const app = express();
 const port = process.env.PORT;
 const uri = process.env.DB_URI;
 console.log("start run");
+
 app.use(
   cors({
     origin: process.env.URL_PORT,
@@ -98,28 +85,6 @@ app.get("/", (req, res) => {
   res.send("hello");
 });
 
-// wbm.start().then(async () => {
-//   const phones = ['123456'];
-//   const message = 'Good Morning.';
-//   await wbm.send(phones, message);
-//   await wbm.end();
-// }).catch(err => console.log(err));
-
-// mongoose
-//   .connect(uri)
-//   .then(() => {
-//     console.log("connected database");
-//     app.listen(port, async () => {
-//       console.log(`listen server at ${port}`);
-//       // cron.schedule("* * * * *", () => {
-//       //   console.log('salam')
-//       //   createNotificationForBirthdayWithCron();
-//       // deleteNotificationsForBirthday()
-//       // });
-//     });
-//   })
-//   .catch((err) => console.log(err));
-
 const connectToDatabase = async (uri, port) => {
   let connected = false;
   let attempts = 0;
@@ -141,33 +106,30 @@ const connectToDatabase = async (uri, port) => {
 
   if (connected) {
     console.log("Connected to the database");
-    app.listen(port, async () => {
+
+    const server = app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
-
-      // await Student.updateMany(
-      //   { 'groups.payment.part': { $exists: true } },
-      //   [
-      //     {
-      //       $set: {
-      //         'groups': {
-      //           $map: {
-      //             input: '$groups',
-      //             as: 'group',
-      //             in: {
-      //               $mergeObjects: [
-      //                 '$$group',
-      //                 { paymentPart: '$$group.payment.part' }
-      //               ]
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //   ]
-      // );
-
-      console.log("done");
     });
+
+    const io = new Server(server, {
+      cors: {
+        origin: process.env.URL_PORT,
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+        exposedHeaders: ["Content-Type"],
+      },
+    });
+
+    io.on("connection", (socket) => {
+      console.log("new user connected");
+
+      socket.on("disconnect", () => {
+        console.log("user disconnected");
+      });
+    });
+
+    app.set("socketio", io);
   } else {
     console.error("Failed to connect to the database after multiple attempts");
   }

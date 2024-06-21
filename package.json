@@ -27,6 +27,7 @@
     "nodemailer": "^6.9.2",
     "nodemon": "^3.0.1",
     "pizzip": "^3.1.6",
+    "socket.io": "^4.7.5",
     "uuid": "^9.0.1",
     "wbm": "^1.1.16",
     "winston": "^3.11.0"

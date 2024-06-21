@@ -1,6 +1,11 @@
 import { Event } from "../models/eventModel.js";
 import { google } from "googleapis";
 import dotenv from "dotenv";
+import { Student } from "../models/studentModel.js";
+import { Teacher } from "../models/teacherModel.js";
+import { Admin } from "../models/adminModel.js";
+import { Worker } from "../models/workerModel.js";
+import { Notification } from "../models/notificationModel.js";
 
 dotenv.config();
 
@@ -49,11 +54,48 @@ export const createEvent = async (req, res) => {
     const newEvent = new Event(req.body);
     await newEvent.save();
 
-    const eventsCount = await Event.countDocuments();
-    const lastPage = Math.ceil(eventsCount / 10);
+    const pipline = [
+      {
+        $group: {
+          _id: null,
+          ids: { $push: "$_id" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          ids: 1,
+        },
+      },
+    ];
+
+    const students = await Student.aggregate(pipline);
+    const teachers = await Teacher.aggregate(pipline);
+    const workers = await Worker.aggregate(pipline);
+    const admins = await Admin.aggregate(pipline);
+
+    const allUsers = [
+      ...students[0].ids,
+      ...teachers[0].ids,
+      ...workers[0].ids,
+      ...admins[0].ids,
+    ];
+
+    const newNotification = new Notification({
+      title: "event",
+      eventId: newEvent._id,
+      recipients: allUsers,
+    });
+
+    await newNotification.save();
+
+    const io = req.app.get("socketio");
+
+    io.emit("newEvent", true);
 
     res.status(201).json(newEvent);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };

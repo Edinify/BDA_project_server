@@ -2,19 +2,14 @@ import { calcDate, calcDateWithMonthly } from "../calculate/calculateDate.js";
 import logger from "../config/logger.js";
 import { Fine } from "../models/fineModel.js";
 import { Teacher } from "../models/teacherModel.js";
-import { createNotificationForTeacherFine } from "./notificationController.js";
 
 // Create
 export const createFine = async (req, res) => {
-  const { teacher } = req.body;
-
   try {
     const fine = await Fine.create(req.body);
 
     const fineCount = await Fine.countDocuments();
     const lastPage = Math.ceil(fineCount / 10);
-
-    createNotificationForTeacherFine(teacher);
 
     res.status(201).json({ fine, lastPage });
   } catch (err) {
