@@ -1,7 +1,6 @@
 import { Event } from "../models/eventModel.js";
 import { google } from "googleapis";
 import dotenv from "dotenv";
-import { Student } from "../models/studentModel.js";
 import { Teacher } from "../models/teacherModel.js";
 import { Admin } from "../models/adminModel.js";
 import { Worker } from "../models/workerModel.js";
@@ -28,7 +27,7 @@ export const getEventsForPagination = async (req, res) => {
       events = await Event.find({
         eventName: { $regex: regexSearchQuery },
       })
-        .sort({ date: 1 })
+        .sort({ date: -1 })
         .skip(length || 0)
         .limit(limit);
 
@@ -37,7 +36,7 @@ export const getEventsForPagination = async (req, res) => {
       const eventsCount = await Event.countDocuments();
       totalLength = eventsCount;
       events = await Event.find()
-        .sort({ date: 1 })
+        .sort({ date: -1 })
         .skip(length || 0)
         .limit(limit);
     }
@@ -64,27 +63,29 @@ export const createEvent = async (req, res) => {
       {
         $project: {
           _id: 0,
-          ids: 1,
+          ids: {
+            $map: {
+              input: "$ids",
+              as: "id",
+              in: { user: "$$id" },
+            },
+          },
         },
       },
     ];
 
-    const students = await Student.aggregate(pipline);
     const teachers = await Teacher.aggregate(pipline);
     const workers = await Worker.aggregate(pipline);
     const admins = await Admin.aggregate(pipline);
 
-    const allUsers = [
-      ...students[0].ids,
-      ...teachers[0].ids,
-      ...workers[0].ids,
-      ...admins[0].ids,
-    ];
+
+    let allUsers = [...teachers[0].ids, ...workers[0].ids, ...admins[0].ids];
 
     const newNotification = new Notification({
       title: "event",
       eventId: newEvent._id,
       recipients: allUsers,
+      message: newEvent.eventName,
     });
 
     await newNotification.save();

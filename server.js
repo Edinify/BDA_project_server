@@ -34,6 +34,8 @@ import leadRoutes from "./routes/leadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import diplomaRoutes from "./routes/diplomaRoutes.js";
 
+import { Notification } from "./models/notificationModel.js";
+
 dotenv.config();
 
 const app = express();
@@ -126,6 +128,22 @@ const connectToDatabase = async (uri, port) => {
 
       socket.on("disconnect", () => {
         console.log("user disconnected");
+      });
+
+      socket.on("checkNewEvent", async (userId) => {
+        console.log("check new event ", userId);
+        const notifications = await Notification.find({
+          recipients: {
+            $elemMatch: {
+              user: new mongoose.Types.ObjectId(userId),
+              viewed: false,
+            },
+          },
+        });
+
+        if (Array.isArray(notifications) && notifications.length > 0) {
+          socket.emit("newEvent", true);
+        }
       });
     });
 
