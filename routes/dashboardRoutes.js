@@ -22,13 +22,8 @@ router.get("/events", getAllEventsCount);
 router.get("/course-statistic", getCoursesStatistics);
 router.get("/consult-statistic", getConsultationsData);
 router.get("/group-table", getWeeklyGroupTable);
-router.get(
-  "/advertising",
-  authMiddleware,
-  checkSuperAdmin,
-  getAdvertisingStatistics
-);
-router.get("/leadboard", authMiddleware, checkSuperAdmin, getTachersResults);
+router.get("/advertising", authMiddleware, getAdvertisingStatistics);
+router.get("/leadboard", authMiddleware, getTachersResults);
 router.get("/chart", getLessonsCountChartData);
 
 export default router;
