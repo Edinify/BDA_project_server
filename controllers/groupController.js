@@ -157,7 +157,7 @@ export const getGroupsForPagination = async (req, res) => {
 
 // Create group
 export const createGroup = async (req, res) => {
-  const { name, status } = req.body;
+  const { name, status, course } = req.body;
 
   try {
     const regexName = new RegExp(name || "", "i");
@@ -166,15 +166,45 @@ export const createGroup = async (req, res) => {
       name: { $regex: regexName },
     });
 
+    const waitingGroup = await Group.findOne({
+      course: course,
+      status: "waiting",
+    });
+
+    if (waitingGroup) {
+      console.log("waiting-group-exists");
+      return res.status(400).json({ key: "waiting-group-exists" });
+    }
+
     if (name && existingGroup) {
+      console.log(existingGroup, "existing group");
       return res.status(409).json({ key: "group-already-exists" });
     }
 
-    const newGroup = new Group(req.body);
+    let groupNumber = "";
+
+    for (let i = 0; i < name.length; i++) {
+      if (!isNaN(name[i]) && name[i] !== " ") {
+        groupNumber += name[i];
+      }
+    }
+
+    const newGroup = new Group({
+      ...req.body,
+      groupNumber: Number(groupNumber),
+    });
+
     await newGroup.populate("teachers students course mentors");
     await newGroup.save();
 
-    createLessons(newGroup);
+    const checkResult = await createLessons(newGroup);
+
+    if (!checkResult) {
+      return res.status(400).json({
+        key: "error-create-lessons",
+        message: "An error occurred while creating classes",
+      });
+    }
 
     const studentsStatus = status === "ended" ? "graduate" : "continue";
 
@@ -193,7 +223,7 @@ export const createGroup = async (req, res) => {
 // Update group
 export const updateGroup = async (req, res) => {
   const { id } = req.params;
-  const { name, status } = req.body;
+  const { name, status, course } = req.body;
   const { id: userId, role } = req.user;
   let updatedData = req.body;
 
@@ -206,6 +236,7 @@ export const updateGroup = async (req, res) => {
     });
 
     if (name && existingGroup) {
+      console.log(existingGroup);
       return res.status(409).json({ key: "group-already-exists" });
     }
 
@@ -238,11 +269,32 @@ export const updateGroup = async (req, res) => {
 
     const oldGroup = await Group.findById(id);
 
-    const updatedGroup = await Group.findByIdAndUpdate(id, req.body, {
-      upsert: true,
-      new: true,
-      runValidators: true,
-    }).populate("teachers students course mentors");
+    if (oldGroup.status !== status && status === "waiting") {
+      const waitingGroup = await Group.findOne({
+        course,
+      });
+
+      if (waitingGroup)
+        return res.status(400).json({ key: "waiting-group-exists" });
+    }
+
+    let groupNumber = "";
+
+    for (let i = 0; i < name.length; i++) {
+      if (!isNaN(name[i]) && name[i] !== " ") {
+        groupNumber += name[i];
+      }
+    }
+
+    const updatedGroup = await Group.findByIdAndUpdate(
+      id,
+      { ...req.body, groupNumber },
+      {
+        upsert: true,
+        new: true,
+        runValidators: true,
+      }
+    ).populate("teachers students course mentors");
 
     if (!updatedGroup) {
       return res.status(404).json({ message: "Group not found" });

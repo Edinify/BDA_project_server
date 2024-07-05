@@ -8,6 +8,9 @@ const groupSchema = new Schema({
     required: true,
     unique: true,
   },
+  groupNumber: {
+    type: Number,
+  },
   teachers: [
     {
       type: Schema.Types.ObjectId,
@@ -63,6 +66,6 @@ const groupSchema = new Schema({
   },
 });
 
-groupSchema.index({ createdAt: 1 });
+groupSchema.index({ createdAt: 1, groupNumber: 1 });
 
 export const Group = mongoose.model("Group", groupSchema);
