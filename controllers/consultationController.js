@@ -3,6 +3,7 @@ import { Consultation } from "../models/consultationModel.js";
 import { Student } from "../models/studentModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
 import { Worker } from "../models/workerModel.js";
+import { Group } from "../models/groupModel.js";
 
 // Get consultations for pagination
 export const getConsultationsForPagination = async (req, res) => {
@@ -118,7 +119,50 @@ export const updateConsultation = async (req, res) => {
       await Consultation.findByIdAndUpdate(updatedConsultation._id, {
         studentId: newStudent._id,
       });
+
+      const checkTargetGroups = await Group.find({
+        course: updatedConsultation.course,
+        status: "waiting",
+        $expr: {
+          $lt: [{ $size: "$students" }, 18],
+        },
+      });
+
+      if (checkTargetGroups.length > 0) {
+        const targetGroup = checkTargetGroups[0];
+
+        targetGroup.students.push(newStudent._id);
+
+        targetGroup.save();
+      } else {
+        const lastGroup = await Group.findOne({
+          course: updatedConsultation.course,
+        }).sort({ groupNumber: -1 });
+
+        let newGroupName = "";
+
+        for (let i = 0; i < lastGroup.name.length; i++) {
+          if (isNaN(lastGroup.name[i]) || lastGroup.name[i] === " ") {
+            newGroupName += lastGroup.name[i];
+          }
+        }
+
+        newGroupName += lastGroup.groupNumber + 1;
+
+        lastGroup.name.split(`${lastGroup.groupNumber}`)[0] +
+          (lastGroup.groupNumber + 1);
+
+        const newGroup = new Group({
+          name: newGroupName,
+          groupNumber: lastGroup.groupNumber + 1,
+          course: updatedConsultation.course._id,
+          students: [newStudent._id],
+        });
+
+        newGroup.save();
+      }
     }
+
     res.status(200).json(updatedConsultation);
   } catch (err) {
     console.log(err);

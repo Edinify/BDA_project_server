@@ -47,9 +47,18 @@ export const createLessons = async (group) => {
     students,
     teachers,
     mentors,
+    status,
   } = group;
 
   try {
+    if (
+      !startDate ||
+      !endDate ||
+      lessonDate.length == 0 ||
+      status === "waiting"
+    )
+      return true;
+
     const freeDays = [
       {
         month: 1,
@@ -82,14 +91,14 @@ export const createLessons = async (group) => {
     ];
 
     const checkLessons = await Lesson.findOne({ group: _id });
+
+    if (checkLessons) return true;
+
     const syllabus = await Syllabus.find({ courseId: course }).sort({
       orderNumber: 1,
     });
     let syllabusIndex = 0;
     const lessons = [];
-
-    if (!startDate || !endDate || lessonDate.length == 0 || checkLessons)
-      return;
 
     while (startDate <= endDate) {
       const currentDay = startDate.getDay() > 0 ? startDate.getDay() : 7;
