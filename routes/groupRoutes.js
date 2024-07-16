@@ -18,7 +18,7 @@ import { getCoursesForPagination } from "../controllers/courseController.js";
 
 const router = express.Router();
 
-router.get("/all", getGroups);
+router.get("/", getGroups);
 router.get("/with-teacher", getGroupsWithTeacherId);
 router.get("/with-mentor", getGroupsWithMentorId);
 router.get("/with-student", getGroupsWithStudentId);

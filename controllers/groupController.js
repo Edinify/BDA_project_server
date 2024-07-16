@@ -6,8 +6,13 @@ import { Worker } from "../models/workerModel.js";
 
 // Get groups
 export const getGroups = async (req, res) => {
+  const { status } = req.query;
   try {
-    const groups = await Group.find().populate("teachers mentors");
+    const filterObj = {};
+
+    if (status === "current" || status === "ended") filterObj.status = status;
+
+    const groups = await Group.find(filterObj).populate("teachers mentors");
 
     res.status(200).json(groups);
   } catch (err) {
