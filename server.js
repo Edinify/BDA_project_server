@@ -34,8 +34,14 @@ import leadRoutes from "./routes/leadRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import axios from "axios";
 import diplomaRoutes from "./routes/diplomaRoutes.js";
+import roomRoutes from "./routes/romeRoutes.js";
 
 import { Notification } from "./models/notificationModel.js";
+import { Group } from "./models/groupModel.js";
+import { group, time } from "console";
+import { Lesson } from "./models/lessonModel.js";
+import { Room } from "./models/roomModel.js";
+import { Admin } from "./models/adminModel.js";
 
 dotenv.config();
 
@@ -86,6 +92,7 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/lead", leadRoutes);
 app.use("/api/event", eventRoutes);
 app.use("/api/diploma", diplomaRoutes);
+app.use("/api/room", roomRoutes);
 
 app.get("/", (req, res) => {
   res.send("hello");
@@ -115,6 +122,28 @@ const connectToDatabase = async (uri, port) => {
 
     const server = app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
+
+      // const allGroups = await Group.find().select("lessonDate");
+
+      // for (let group of allGroups) {
+      //   const newLessonDateList = group.lessonDate.map((date) => {
+      //     return {
+      //       practical: date.practical,
+      //       day: date.day,
+      //       startTime: date.time,
+      //     };
+      //   });
+
+      //   console.log(newLessonDateList);
+      //   group.lessonDate = newLessonDateList;
+
+      //   console.log(group);
+      //   group.save()
+      // }
+      // await Lesson.updateMany({}, {$rename: {time: "startTime"}})
+
+      const room = await Room.findOne({ name: "G" }).populate("groups.group");
+      console.log(room);
     });
 
     const io = new Server(server, {
