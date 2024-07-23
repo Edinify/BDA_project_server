@@ -357,15 +357,20 @@ export const getWeeklyGroupTable = async (req, res) => {
   try {
     const groups = await Group.find({
       status: "current",
-    }).select("-teachers -mentors -students");
+    })
+      .select("-teachers -mentors -students")
+      .populate("room");
 
     const result = groups
       .reduce((list, group) => {
         const newList = [...list];
         group.lessonDate.forEach((dateItem) => {
-          const targetListItem = newList.find(
-            (listItem) => listItem.time === dateItem.time
-          );
+          const targetListItem = newList.find((listItem) => {
+            return (
+              (listItem.startTime || "") + (listItem.endTime || "") ===
+              (dateItem.startTime || "") + (dateItem.endTime || "")
+            );
+          });
 
           if (targetListItem) {
             const checkExistGroup = targetListItem.groups.find(
@@ -377,7 +382,8 @@ export const getWeeklyGroupTable = async (req, res) => {
             }
           } else {
             newList.push({
-              time: dateItem.time,
+              startTime: dateItem.startTime || "",
+              endTime: dateItem.endTime || "",
               groups: [group],
             });
           }
@@ -386,11 +392,13 @@ export const getWeeklyGroupTable = async (req, res) => {
         return newList;
       }, [])
       .sort((a, b) => {
-        const timeA = new Date(`1970-01-01T${a.time}`);
-        const timeB = new Date(`1970-01-01T${b.time}`);
+        const timeA = new Date(`1970-01-01T${a.startTime}`);
+        const timeB = new Date(`1970-01-01T${b.startTime}`);
 
         return timeA - timeB;
       });
+
+    console.log(result);
 
     res.status(200).json(result);
   } catch (err) {

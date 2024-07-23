@@ -34,6 +34,11 @@ const groupSchema = new Schema({
     ref: "Course",
     required: true,
   },
+  room: {
+    type: Schema.Types.ObjectId,
+    ref: "Room",
+    required: true,
+  },
   startDate: {
     type: Date,
   },
@@ -50,7 +55,11 @@ const groupSchema = new Schema({
         type: Number,
         required: true,
       },
-      time: {
+      startTime: {
+        type: String,
+        required: true,
+      },
+      endTime: {
         type: String,
         required: true,
       },

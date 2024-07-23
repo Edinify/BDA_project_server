@@ -3,6 +3,8 @@ import { createLessons } from "./lessonController.js";
 import { Student } from "../models/studentModel.js";
 import { Lesson } from "../models/lessonModel.js";
 import { Worker } from "../models/workerModel.js";
+import { Room } from "../models/roomModel.js";
+import moment from "moment";
 
 // Get groups
 export const getGroups = async (req, res) => {
@@ -141,7 +143,7 @@ export const getGroupsForPagination = async (req, res) => {
         .skip(length || 0)
         .limit(limit)
         .sort({ createdAt: -1 })
-        .populate("teachers students course mentors");
+        .populate("teachers students course mentors room");
 
       totalLength = groupsCount;
     } else {
@@ -151,7 +153,7 @@ export const getGroupsForPagination = async (req, res) => {
         .skip(length || 0)
         .limit(limit)
         .sort({ createdAt: -1 })
-        .populate("teachers students course mentors");
+        .populate("teachers students course mentors room");
     }
 
     res.status(200).json({ groupData, totalLength });
@@ -161,8 +163,55 @@ export const getGroupsForPagination = async (req, res) => {
 };
 
 // Create group
+
+const checkIsRoomFull = (targetRoom, lessonDate) => {
+  let isRoomFull = false;
+
+  for (const lessonTimeItem of lessonDate || []) {
+    if (!targetRoom.groups?.length) break;
+    if (
+      !lessonTimeItem.day ||
+      !lessonTimeItem.startTime ||
+      !lessonTimeItem.endTime
+    )
+      continue;
+
+    for (const groupItem of targetRoom.groups) {
+      for (const timeItem of groupItem?.group?.lessonDate || []) {
+        const createdGroupLessonStartTime = moment(
+          lessonTimeItem.startTime,
+          "HH:mm"
+        );
+        const createdGroupLessonEndTime = moment(
+          lessonTimeItem.endTime,
+          "HH:mm"
+        );
+        const inRoomLessonStartTime = moment(timeItem.startTime, "HH:mm");
+        const inRoomLessonEndTime = moment(timeItem.endTime, "HH:mm");
+
+        console.log(createdGroupLessonStartTime, "createdGroupLessonStartTime");
+
+        isRoomFull =
+          lessonTimeItem.day == timeItem.day &&
+          ((createdGroupLessonStartTime.isBefore(inRoomLessonEndTime) &&
+            createdGroupLessonStartTime.isAfter(inRoomLessonStartTime)) ||
+            (createdGroupLessonEndTime.isBefore(inRoomLessonEndTime) &&
+              createdGroupLessonEndTime.isAfter(inRoomLessonStartTime)) ||
+            (createdGroupLessonStartTime.isBefore(inRoomLessonStartTime) &&
+              createdGroupLessonEndTime.isAfter(inRoomLessonEndTime)) ||
+            createdGroupLessonStartTime.isSame(inRoomLessonStartTime) ||
+            createdGroupLessonEndTime.isSame(inRoomLessonEndTime));
+
+        if (isRoomFull) return isRoomFull;
+      }
+    }
+  }
+
+  return isRoomFull;
+};
+
 export const createGroup = async (req, res) => {
-  const { name, status, course } = req.body;
+  const { name, status, course, room, lessonDate } = req.body;
 
   try {
     const regexName = new RegExp(name || "", "i");
@@ -186,6 +235,23 @@ export const createGroup = async (req, res) => {
       return res.status(409).json({ key: "group-already-exists" });
     }
 
+    const targetRoom = await Room.findById(room).populate("groups.group");
+
+    console.log(targetRoom, "target room");
+
+    if (!targetRoom) {
+      return res.status(400).json({ key: "room-required" });
+    }
+
+    let isRoomFull =
+      status !== "ended" ? checkIsRoomFull(targetRoom, lessonDate) : false;
+
+    if (isRoomFull) {
+      return res
+        .status(400)
+        .json({ key: "room-full", message: "room is full at that time" });
+    }
+
     let groupNumber = "";
 
     for (let i = 0; i < name.length; i++) {
@@ -199,8 +265,13 @@ export const createGroup = async (req, res) => {
       groupNumber: Number(groupNumber),
     });
 
-    await newGroup.populate("teachers students course mentors");
+    await newGroup.populate("teachers students course mentors room");
     await newGroup.save();
+
+    if (status !== "ended") {
+      targetRoom.groups.push({ group: newGroup._id });
+      await targetRoom.save();
+    }
 
     const checkResult = await createLessons(newGroup);
 
@@ -228,7 +299,7 @@ export const createGroup = async (req, res) => {
 // Update group
 export const updateGroup = async (req, res) => {
   const { id } = req.params;
-  const { name, status, course } = req.body;
+  const { name, status, course, room, lessonDate } = req.body;
   const { id: userId, role } = req.user;
   let updatedData = req.body;
 
@@ -276,6 +347,7 @@ export const updateGroup = async (req, res) => {
 
     if (oldGroup.status !== status && status === "waiting") {
       const waitingGroup = await Group.findOne({
+        _id: { $ne: oldGroup._id },
         course,
       });
 
@@ -299,11 +371,57 @@ export const updateGroup = async (req, res) => {
         new: true,
         runValidators: true,
       }
-    ).populate("teachers students course mentors");
+    ).populate("teachers students course mentors room");
 
     if (!updatedGroup) {
       return res.status(404).json({ message: "Group not found" });
     }
+
+    // rooms process start
+    const oldRoom = await Room.findById(oldGroup.room);
+
+    if (
+      (oldGroup.status !== updatedGroup.status &&
+        updatedGroup.status === "ended") ||
+      (oldGroup.room &&
+        oldGroup.room.toString() !== updatedGroup.room._id.toString())
+    ) {
+      await Room.findByIdAndUpdate(oldGroup.room, {
+        $pull: { groups: { group: oldGroup._id } },
+      });
+    }
+
+    const targetRoom = await Room.findById(updatedGroup.room._id).populate(
+      "groups.group"
+    );
+
+    if (!targetRoom) {
+      return res.status(400).json({ key: "room-required" });
+    }
+
+    targetRoom.groups = targetRoom.groups.filter(
+      (item) => item.group._id.toString() !== updatedGroup._id.toString()
+    );
+
+    let isRoomFull =
+      status !== "ended" ? checkIsRoomFull(targetRoom, lessonDate) : false;
+
+    if (isRoomFull) {
+      await Group.findByIdAndUpdate(oldGroup._id, oldGroup);
+      await Room.findByIdAndUpdate(oldGroup.room, oldRoom);
+      return res
+        .status(400)
+        .json({ key: "room-full", message: "room is full at that time" });
+    }
+
+    if (
+      status !== "ended" &&
+      oldGroup.room.toString() !== updatedGroup.room._id.toString()
+    ) {
+      targetRoom.groups.push({ group: updatedGroup._id });
+      await targetRoom.save();
+    }
+    // rooms process end
 
     const studentsIds = updatedGroup.students.map((student) => student._id);
 
@@ -421,6 +539,10 @@ export const deleteGroup = async (req, res) => {
       { _id: { $in: deletedGroup.students } },
       { $pull: { groups: { group: deletedGroup._id } } }
     );
+
+    await Room.findByIdAndUpdate(deletedGroup.room, {
+      $pull: { groups: { group: deletedGroup._id } },
+    });
 
     res.status(200).json(deletedGroup);
   } catch (err) {
