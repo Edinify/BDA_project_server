@@ -416,11 +416,19 @@ export const updateGroup = async (req, res) => {
 
     if (
       status !== "ended" &&
-      oldGroup.room.toString() !== updatedGroup.room._id.toString()
+      oldGroup?.room?.toString() !== updatedGroup.room._id.toString()
     ) {
       targetRoom.groups.push({ group: updatedGroup._id });
       await targetRoom.save();
+
+      console.log(targetRoom, "targetRoom");
     }
+
+    if (oldGroup.status === "ended" && updatedData.status !== "ended") {
+      targetRoom.groups.push({ group: updatedGroup._id });
+      await targetRoom.save();
+    }
+
     // rooms process end
 
     const studentsIds = updatedGroup.students.map((student) => student._id);
