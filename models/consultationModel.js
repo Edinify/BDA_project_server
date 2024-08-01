@@ -53,7 +53,15 @@ const consultationSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["appointed", "sold", "cancelled", "thinks"],
+      enum: [
+        "appointed",
+        "sold",
+        "cancelled",
+        "thinks",
+        "not-open-call",
+        "call-missing",
+        "whatsapp_info",
+      ],
       default: "appointed",
     },
     changes: {
@@ -62,5 +70,7 @@ const consultationSchema = new Schema(
   },
   { timestamps: true }
 );
+
+consultationSchema.index({ contactDate: 1 });
 
 export const Consultation = mongoose.model("Consultation", consultationSchema);

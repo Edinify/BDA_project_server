@@ -109,7 +109,14 @@ const studentSchema = new Schema(
         },
         diplomaStatus: {
           type: String,
-          enum: ["noneDefensed", "defensed", "done", "awarded"],
+          enum: [
+            "none",
+            "send-design",
+            "designed",
+            "send-print",
+            "in-academy",
+            "awarded",
+          ],
           default: "noneDefensed",
         },
         diplomaDegree: {

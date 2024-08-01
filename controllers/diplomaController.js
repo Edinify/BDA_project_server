@@ -4,26 +4,25 @@ import exceljs from "exceljs";
 import moment from "moment";
 import mongoose from "mongoose";
 
-// Get careers
+// Get diplomas
 export const getDiplomas = async (req, res) => {
   const { searchQuery, groupId, length } = req.query;
   const limit = 20;
 
-  console.log(req.query);
   try {
-    if (!groupId) {
-      return res
-        .status(400)
-        .json({ error: { message: "group is not selected!" } });
-    }
-
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
     const filterObj = {
-      fullName: { $regex: regexSearchQuery },
       "groups.0": { $exists: true },
-      "groups.group": new mongoose.Types.ObjectId(groupId),
       deleted: false,
     };
+    const groupIdObj = {};
+
+    if (groupId) {
+      filterObj["groups.group"] = new mongoose.Types.ObjectId(groupId);
+      groupIdObj["groups.group"] = new mongoose.Types.ObjectId(groupId);
+    }
+
+    if (regexSearchQuery) filterObj.fullName = { $regex: regexSearchQuery };
 
     const pipeline = [
       {
@@ -39,7 +38,7 @@ export const getDiplomas = async (req, res) => {
 
       {
         $match: {
-          "groups.group": new mongoose.Types.ObjectId(groupId),
+          ...groupIdObj,
         },
       },
       {
@@ -54,7 +53,7 @@ export const getDiplomas = async (req, res) => {
         $addFields: {
           group: { $arrayElemAt: ["$targetGroup", 0] },
           diplomaStatus: {
-            $ifNull: ["$groups.diplomaStatus", "noneDefensed"],
+            $ifNull: ["$groups.diplomaStatus", "none"],
           },
           diplomaDegree: {
             $ifNull: ["$groups.diplomaDegree", "none"],

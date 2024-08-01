@@ -4,10 +4,19 @@ import { Student } from "../models/studentModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
 import { Worker } from "../models/workerModel.js";
 import { Group } from "../models/groupModel.js";
+import { calcDate } from "../calculate/calculateDate.js";
 
 // Get consultations for pagination
 export const getConsultationsForPagination = async (req, res) => {
-  const { searchQuery, status, length } = req.query;
+  const {
+    searchQuery,
+    status,
+    length,
+    startDate,
+    endDate,
+    whereComing,
+    courseId,
+  } = req.query;
   const limit = 20;
 
   try {
@@ -15,39 +24,39 @@ export const getConsultationsForPagination = async (req, res) => {
     let consultations;
     let filterObj = {};
 
-    if (status === "appointed") {
-      filterObj.status = "appointed";
-    } else if (status === "completed") {
-      filterObj.status = { $ne: "appointed" };
-    } else {
-      return res.status(400).json({ message: "no status query" });
+    if (status) {
+      filterObj.status = status;
+    }
+
+    if (startDate && endDate) {
+      const targetDate = calcDate(null, startDate, endDate);
+      filterObj.constDate = {
+        $gte: targetDate.startDate,
+        $lte: targetDate.endDate,
+      };
+    }
+
+    if (courseId) {
+      filterObj.course = courseId;
+    }
+
+    if (whereComing) {
+      filterObj.whereComing = whereComing;
     }
 
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");
-
-      const consultationsCount = await Consultation.countDocuments({
-        ...filterObj,
-        studentName: { $regex: regexSearchQuery },
-      });
-
-      consultations = await Consultation.find({
-        ...filterObj,
-        studentName: { $regex: regexSearchQuery },
-      })
-        .skip(length || 0)
-        .limit(limit)
-        .populate("course teacher");
-
-      totalLength = consultationsCount;
-    } else {
-      const consultationsCount = await Consultation.countDocuments(filterObj);
-      totalLength = consultationsCount;
-      consultations = await Consultation.find(filterObj)
-        .skip(length || 0)
-        .limit(limit)
-        .populate("course teacher");
+      filterObj.studentName = { $regex: regexSearchQuery };
     }
+
+    const consultationsCount = await Consultation.countDocuments(filterObj);
+    totalLength = consultationsCount;
+    consultations = await Consultation.find(filterObj)
+      .skip(length || 0)
+      .limit(limit)
+      .populate("course teacher")
+      .sort({ contactDate: -1 });
+
     res.status(200).json({ consultations, totalLength });
   } catch (err) {
     res.status(500).json({ message: { error: err.message } });
