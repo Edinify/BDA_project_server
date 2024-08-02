@@ -51,6 +51,8 @@ const port = process.env.PORT;
 const uri = process.env.DB_URI;
 console.log("start run");
 
+
+
 app.use(
   cors({
     origin: process.env.URL_PORT,
@@ -60,9 +62,6 @@ app.use(
     exposedHeaders: ["Content-Type"],
   })
 );
-// ==============
-
-
 // ==============
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: "15mb" }));
