@@ -43,6 +43,7 @@ import { Lesson } from "./models/lessonModel.js";
 import { Room } from "./models/roomModel.js";
 import { Admin } from "./models/adminModel.js";
 import { Student } from "./models/studentModel.js";
+import { Worker } from "./models/workerModel.js";
 
 dotenv.config();
 
@@ -126,6 +127,7 @@ const connectToDatabase = async (uri, port) => {
     });
 
     const io = new Server(server, {
+      // transports: ["websocket"],
       cors: {
         origin: process.env.URL_PORT,
         credentials: true,
@@ -144,17 +146,20 @@ const connectToDatabase = async (uri, port) => {
 
       socket.on("checkNewEvent", async (userId) => {
         console.log("check new event ", userId);
-        const notifications = await Notification.find({
-          recipients: {
-            $elemMatch: {
-              user: new mongoose.Types.ObjectId(userId),
-              viewed: false,
-            },
-          },
-        });
 
-        if (Array.isArray(notifications) && notifications.length > 0) {
-          socket.emit("newEvent", true);
+        if (userId) {
+          const notifications = await Notification.find({
+            recipients: {
+              $elemMatch: {
+                user: new mongoose.Types.ObjectId(userId),
+                viewed: false,
+              },
+            },
+          });
+
+          if (Array.isArray(notifications) && notifications.length > 0) {
+            socket.emit("newEvent", true);
+          }
         }
       });
     });
