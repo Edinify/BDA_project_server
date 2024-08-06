@@ -235,21 +235,22 @@ export const createGroup = async (req, res) => {
       return res.status(409).json({ key: "group-already-exists" });
     }
 
-    const targetRoom = await Room.findById(room).populate("groups.group");
+    let targetRoom;
+    if (room) {
+      targetRoom = await Room.findById(room).populate("groups.group");
 
-    console.log(targetRoom, "target room");
+      if (!targetRoom) {
+        return res.status(400).json({ key: "room-required" });
+      }
 
-    if (!targetRoom) {
-      return res.status(400).json({ key: "room-required" });
-    }
+      let isRoomFull =
+        status !== "ended" ? checkIsRoomFull(targetRoom, lessonDate) : false;
 
-    let isRoomFull =
-      status !== "ended" ? checkIsRoomFull(targetRoom, lessonDate) : false;
-
-    if (isRoomFull) {
-      return res
-        .status(400)
-        .json({ key: "room-full", message: "room is full at that time" });
+      if (isRoomFull) {
+        return res
+          .status(400)
+          .json({ key: "room-full", message: "room is full at that time" });
+      }
     }
 
     let groupNumber = "";
@@ -268,7 +269,7 @@ export const createGroup = async (req, res) => {
     await newGroup.populate("teachers students course mentors room");
     await newGroup.save();
 
-    if (status !== "ended") {
+    if (status !== "ended" && targetRoom) {
       targetRoom.groups.push({ group: newGroup._id });
       await targetRoom.save();
     }
@@ -378,55 +379,54 @@ export const updateGroup = async (req, res) => {
     }
 
     // rooms process start
-    const oldRoom = await Room.findById(oldGroup.room);
+    if (oldGroup?.room) {
+      const oldRoom = await Room.findById(oldGroup.room);
 
-    if (
-      (oldGroup.status !== updatedGroup.status &&
-        updatedGroup.status === "ended") ||
-      (oldGroup.room &&
-        oldGroup.room.toString() !== updatedGroup.room._id.toString())
-    ) {
-      await Room.findByIdAndUpdate(oldGroup.room, {
-        $pull: { groups: { group: oldGroup._id } },
-      });
-    }
+      if (
+        (oldGroup.status !== updatedGroup.status &&
+          updatedGroup.status === "ended") ||
+        oldGroup.room.toString() !== updatedGroup.room._id.toString()
+      ) {
+        await Room.findByIdAndUpdate(oldGroup.room, {
+          $pull: { groups: { group: oldGroup._id } },
+        });
+      }
 
-    const targetRoom = await Room.findById(updatedGroup.room._id).populate(
-      "groups.group"
-    );
+      const targetRoom = await Room.findById(updatedGroup.room._id).populate(
+        "groups.group"
+      );
 
-    if (!targetRoom) {
-      return res.status(400).json({ key: "room-required" });
-    }
+      if (!targetRoom) {
+        return res.status(400).json({ key: "room-required" });
+      }
 
-    targetRoom.groups = targetRoom.groups.filter(
-      (item) => item.group._id.toString() !== updatedGroup._id.toString()
-    );
+      targetRoom.groups = targetRoom.groups.filter(
+        (item) => item.group._id.toString() !== updatedGroup._id.toString()
+      );
 
-    let isRoomFull =
-      status !== "ended" ? checkIsRoomFull(targetRoom, lessonDate) : false;
+      let isRoomFull =
+        status !== "ended" ? checkIsRoomFull(targetRoom, lessonDate) : false;
 
-    if (isRoomFull) {
-      await Group.findByIdAndUpdate(oldGroup._id, oldGroup);
-      await Room.findByIdAndUpdate(oldGroup.room, oldRoom);
-      return res
-        .status(400)
-        .json({ key: "room-full", message: "room is full at that time" });
-    }
+      if (isRoomFull) {
+        await Group.findByIdAndUpdate(oldGroup._id, oldGroup);
+        await Room.findByIdAndUpdate(oldGroup.room, oldRoom);
+        return res
+          .status(400)
+          .json({ key: "room-full", message: "room is full at that time" });
+      }
 
-    if (
-      status !== "ended" &&
-      oldGroup?.room?.toString() !== updatedGroup.room._id.toString()
-    ) {
-      targetRoom.groups.push({ group: updatedGroup._id });
-      await targetRoom.save();
+      if (
+        status !== "ended" &&
+        oldGroup?.room?.toString() !== updatedGroup.room._id.toString()
+      ) {
+        targetRoom.groups.push({ group: updatedGroup._id });
+        await targetRoom.save();
+      }
 
-      console.log(targetRoom, "targetRoom");
-    }
-
-    if (oldGroup.status === "ended" && updatedData.status !== "ended") {
-      targetRoom.groups.push({ group: updatedGroup._id });
-      await targetRoom.save();
+      if (oldGroup.status === "ended" && updatedData.status !== "ended") {
+        targetRoom.groups.push({ group: updatedGroup._id });
+        await targetRoom.save();
+      }
     }
 
     // rooms process end

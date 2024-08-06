@@ -37,7 +37,6 @@ const groupSchema = new Schema({
   room: {
     type: Schema.Types.ObjectId,
     ref: "Room",
-    required: true,
   },
   startDate: {
     type: Date,

@@ -142,33 +142,38 @@ export const updateConsultation = async (req, res) => {
 
         targetGroup.students.push(newStudent._id);
 
-        targetGroup.save();
+        await targetGroup.save();
       } else {
-        const lastGroup = await Group.findOne({
-          course: updatedConsultation.course,
-        }).sort({ groupNumber: -1 });
+        try {
+          const lastGroup = await Group.findOne({
+            course: updatedConsultation.course,
+          }).sort({ groupNumber: -1 });
 
-        let newGroupName = "";
+          let newGroupName = "";
 
-        for (let i = 0; i < lastGroup.name.length; i++) {
-          if (isNaN(lastGroup.name[i]) || lastGroup.name[i] === " ") {
-            newGroupName += lastGroup.name[i];
+          for (let i = 0; i < lastGroup.name.length; i++) {
+            if (isNaN(lastGroup.name[i]) || lastGroup.name[i] === " ") {
+              newGroupName += lastGroup.name[i];
+            }
           }
+
+          newGroupName += lastGroup.groupNumber + 1;
+
+          lastGroup.name.split(`${lastGroup.groupNumber}`)[0] +
+            (lastGroup.groupNumber + 1);
+
+          const newGroup = new Group({
+            name: newGroupName,
+            groupNumber: lastGroup.groupNumber + 1,
+            course: updatedConsultation.course._id,
+            students: [newStudent._id],
+          });
+
+          await newGroup.save();
+        } catch (error) {
+          console.log(error.message);
+          return res.status(500).json(error.message);
         }
-
-        newGroupName += lastGroup.groupNumber + 1;
-
-        lastGroup.name.split(`${lastGroup.groupNumber}`)[0] +
-          (lastGroup.groupNumber + 1);
-
-        const newGroup = new Group({
-          name: newGroupName,
-          groupNumber: lastGroup.groupNumber + 1,
-          course: updatedConsultation.course._id,
-          students: [newStudent._id],
-        });
-
-        newGroup.save();
       }
     }
 
