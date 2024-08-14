@@ -1,4 +1,4 @@
-import mongoose, { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 import { Consultation } from "../models/consultationModel.js";
 import { Student } from "../models/studentModel.js";
 import { Syllabus } from "../models/syllabusModel.js";
@@ -54,7 +54,7 @@ export const getConsultationsForPagination = async (req, res) => {
     consultations = await Consultation.find(filterObj)
       .skip(length || 0)
       .limit(limit)
-      .populate("course teacher")
+      .populate("course teacher group")
       .sort({ contactDate: -1 });
 
     res.status(200).json({ consultations, totalLength });
@@ -78,13 +78,16 @@ export const createConsultation = async (req, res) => {
 
 // Update consultation
 export const updateConsultation = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   const { id } = req.params;
   const { id: userId, role } = req.user;
   let updatedData = req.body;
 
   try {
     if (role === "worker") {
-      const worker = await Worker.findById(userId);
+      const worker = await Worker.findById(userId).session(session);
 
       const power = worker.profiles.find(
         (item) => item.profile === "consultation"
@@ -94,23 +97,29 @@ export const updateConsultation = async (req, res) => {
         delete updatedData.changes;
 
         const payload = new Consultation(updatedData);
-        await payload.populate("course teacher");
+        await payload.populate("course teacher").session(session);
 
         updatedData = { changes: payload.toObject() };
       }
     }
 
-    const updatedConsultation = await Consultation.findByIdAndUpdate(
+    if (!updatedData?.group || updatedData?.group === "newGroup")
+      delete updatedData.group;
+
+    console.log(updatedData, "updated Data");
+    let updatedConsultation = await Consultation.findByIdAndUpdate(
       id,
       updatedData,
       {
-        upsert: true,
         new: true,
         runValidators: true,
+        session: session,
       }
-    ).populate("course teacher");
+    ).populate("course teacher group");
 
     if (!updatedConsultation) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: "Consultation not found" });
     }
 
@@ -124,62 +133,105 @@ export const updateConsultation = async (req, res) => {
       };
 
       const newStudent = new Student(studentData);
-      await newStudent.save();
-      await Consultation.findByIdAndUpdate(updatedConsultation._id, {
-        studentId: newStudent._id,
-      });
+      await newStudent.save({ session: session });
 
-      const checkTargetGroups = await Group.find({
-        course: updatedConsultation.course,
-        status: "waiting",
-        $expr: {
-          $lt: [{ $size: "$students" }, 18],
+      await Consultation.findByIdAndUpdate(
+        updatedConsultation._id,
+        {
+          studentId: newStudent._id,
         },
-      });
+        { session: session }
+      );
 
-      if (checkTargetGroups.length > 0) {
-        const targetGroup = checkTargetGroups[0];
+      let targetGroup;
 
+      if (updatedData?.group) {
+        targetGroup = await Group.findOne({
+          _id: updatedData.group._id,
+          course: updatedConsultation.course,
+          status: "waiting",
+          $expr: {
+            $lt: [{ $size: "$students" }, 18],
+          },
+        }).session(session);
+      }
+
+      if (targetGroup) {
         targetGroup.students.push(newStudent._id);
 
-        await targetGroup.save();
+        await targetGroup.save({ session: session });
+        await Student.findByIdAndUpdate(
+          newStudent._id,
+          {
+            $push: {
+              groups: {
+                group: targetGroup._id,
+              },
+            },
+          },
+          { session: session }
+        );
       } else {
-        try {
-          const lastGroup = await Group.findOne({
-            course: updatedConsultation.course,
-          }).sort({ groupNumber: -1 });
+        const lastGroup = await Group.findOne({
+          course: updatedConsultation.course,
+        })
+          .sort({ groupNumber: -1 })
+          .session(session);
 
-          let newGroupName = "";
+        let newGroupName = "";
 
-          for (let i = 0; i < lastGroup.name.length; i++) {
-            if (isNaN(lastGroup.name[i]) || lastGroup.name[i] === " ") {
-              newGroupName += lastGroup.name[i];
-            }
+        for (let i = 0; i < lastGroup.name.length; i++) {
+          if (isNaN(lastGroup.name[i]) || lastGroup.name[i] === " ") {
+            newGroupName += lastGroup.name[i];
           }
-
-          newGroupName += lastGroup.groupNumber + 1;
-
-          lastGroup.name.split(`${lastGroup.groupNumber}`)[0] +
-            (lastGroup.groupNumber + 1);
-
-          const newGroup = new Group({
-            name: newGroupName,
-            groupNumber: lastGroup.groupNumber + 1,
-            course: updatedConsultation.course._id,
-            students: [newStudent._id],
-          });
-
-          await newGroup.save();
-        } catch (error) {
-          console.log(error.message);
-          return res.status(500).json(error.message);
         }
+
+        newGroupName += lastGroup.groupNumber + 1;
+
+        lastGroup.name.split(`${lastGroup.groupNumber}`)[0] +
+          (lastGroup.groupNumber + 1);
+
+        const newGroup = new Group({
+          name: newGroupName,
+          groupNumber: lastGroup.groupNumber + 1,
+          course: updatedConsultation.course._id,
+          students: [newStudent._id],
+        });
+
+        await newGroup.save({ session: session });
+
+        await Student.findByIdAndUpdate(
+          newStudent._id,
+          {
+            $push: {
+              groups: {
+                group: newGroup._id,
+              },
+            },
+          },
+          { session: session }
+        );
+
+        updatedConsultation = await Consultation.findByIdAndUpdate(
+          id,
+          { group: newGroup._id },
+          {
+            new: true,
+            runValidators: true,
+            session: session,
+          }
+        ).populate("course teacher group");
       }
     }
 
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(200).json(updatedConsultation);
   } catch (err) {
-    console.log(err);
+    console.log(err, "main error", err.message);
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({ message: { error: err.message } });
   }
 };

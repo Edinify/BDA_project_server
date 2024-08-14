@@ -8,11 +8,15 @@ import moment from "moment";
 
 // Get groups
 export const getGroups = async (req, res) => {
-  const { status } = req.query;
+  const { status, courseId } = req.query;
+
   try {
     const filterObj = {};
 
-    if (status === "current" || status === "ended") filterObj.status = status;
+    if (status === "current" || status === "ended" || status === "waiting")
+      filterObj.status = status;
+
+    if (courseId) filterObj.course = courseId;
 
     const groups = await Group.find(filterObj).populate("teachers mentors");
 

@@ -123,7 +123,6 @@ const connectToDatabase = async (uri, port) => {
     });
 
     const io = new Server(server, {
-      // transports: ["websocket"],
       cors: {
         origin: process.env.URL_PORT,
         credentials: true,
