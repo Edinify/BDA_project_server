@@ -13,27 +13,34 @@ const consultationSchema = new Schema(
     },
     constDate: {
       type: Date,
-      required: true,
     },
     constTime: {
       type: String,
-      required: true,
     },
     studentName: {
       type: String,
-      required: true,
+      required: function () {
+        return this.status === "sold";
+      },
     },
     studentPhone: {
       type: String,
+      required: true,
     },
     course: {
       type: Schema.Types.ObjectId,
-      required: true,
+      required: function () {
+        return this.status === "sold";
+      },
       ref: "Course",
     },
     teacher: {
       type: Schema.Types.ObjectId,
       ref: "Teacher",
+    },
+    group: {
+      type: Schema.Types.ObjectId,
+      ref: "Group",
     },
     persona: {
       type: String,
@@ -43,9 +50,6 @@ const consultationSchema = new Schema(
       default: "other",
     },
     knowledge: {
-      type: String,
-    },
-    cancelReason: {
       type: String,
     },
     addInfo: {
@@ -63,6 +67,9 @@ const consultationSchema = new Schema(
         "whatsapp_info",
       ],
       default: "appointed",
+    },
+    cancelReason: {
+      type: String,
     },
     changes: {
       type: Object,

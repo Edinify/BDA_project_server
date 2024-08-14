@@ -117,7 +117,7 @@ const studentSchema = new Schema(
             "in-academy",
             "awarded",
           ],
-          default: "noneDefensed",
+          default: "none",
         },
         diplomaDegree: {
           type: String,
