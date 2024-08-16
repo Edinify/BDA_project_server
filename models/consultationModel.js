@@ -23,6 +23,12 @@ const consultationSchema = new Schema(
         return this.status === "sold";
       },
     },
+    fin: {
+      type: String,
+      required: function () {
+        return this.status === "sold";
+      },
+    },
     studentPhone: {
       type: String,
       required: true,
@@ -77,6 +83,14 @@ const consultationSchema = new Schema(
   },
   { timestamps: true }
 );
+
+consultationSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+  if (update.fin) {
+    update.fin = update.fin.toUpperCase();
+  }
+  next();
+});
 
 consultationSchema.index({ contactDate: 1 });
 

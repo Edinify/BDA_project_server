@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 
 // Get diplomas
 export const getDiplomas = async (req, res) => {
-  const { searchQuery, groupId, length } = req.query;
+  const { searchQuery, groupId, length, courseId } = req.query;
   const limit = 20;
 
   try {
@@ -21,6 +21,8 @@ export const getDiplomas = async (req, res) => {
       filterObj["groups.group"] = new mongoose.Types.ObjectId(groupId);
       groupIdObj["groups.group"] = new mongoose.Types.ObjectId(groupId);
     }
+
+    if (courseId) filterObj.courses = new mongoose.Types.ObjectId(courseId);
 
     if (regexSearchQuery) filterObj.fullName = { $regex: regexSearchQuery };
 
@@ -49,9 +51,25 @@ export const getDiplomas = async (req, res) => {
           as: "targetGroup",
         },
       },
+      // ---------
+      {
+        $unwind: "$targetGroup",
+      },
+      // Burada `groups.group.course` sahəsini populate edirik
+      {
+        $lookup: {
+          from: "courses",
+          localField: "targetGroup.course",
+          foreignField: "_id",
+          as: "targetCourse",
+        },
+      },
+      // =============
       {
         $addFields: {
-          group: { $arrayElemAt: ["$targetGroup", 0] },
+          group: "$targetGroup",
+          course: { $arrayElemAt: ["$targetCourse", 0] },
+          // group: { $arrayElemAt: ["$targetGroup", 0] },
           diplomaStatus: {
             $ifNull: ["$groups.diplomaStatus", "none"],
           },
@@ -66,6 +84,7 @@ export const getDiplomas = async (req, res) => {
           _id: 1,
           fullName: 1,
           group: 1,
+          course: 1,
           diplomaStatus: 1,
           diplomaDegree: 1,
           diplomaDate: 1,
@@ -107,7 +126,12 @@ export const updateDiploma = async (req, res) => {
     targetStudentGroup.diplomaStatus = diplomaStatus;
 
     await student.save();
-    await student.populate("groups.group");
+    await student.populate({
+      path: "groups.group",
+      populate: {
+        path: "course",
+      },
+    });
 
     const targetGroup = student.groups.find(
       (item) => item.group._id.toString() === group._id.toString()
@@ -119,6 +143,7 @@ export const updateDiploma = async (req, res) => {
       _id: student._id,
       fullName: student.fullName,
       group: targetGroup.group,
+      course: targetGroup.group.course,
       diplomaDegree: targetGroup.diplomaDegree,
       diplomaDate: targetGroup.diplomaDate,
       diplomaStatus: targetGroup.diplomaStatus,

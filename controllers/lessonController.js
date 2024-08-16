@@ -50,6 +50,8 @@ export const createLessons = async (group) => {
     status,
   } = group;
 
+  console.log(startDate);
+  console.log(new Date(startDate));
   try {
     if (
       !startDate ||

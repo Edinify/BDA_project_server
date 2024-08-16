@@ -65,13 +65,16 @@ export const getConsultationsForPagination = async (req, res) => {
 
 // Create consultations
 export const createConsultation = async (req, res) => {
+  const newData = req.body;
+  delete newData.group;
   try {
-    const newConsultation = new Consultation(req.body);
+    const newConsultation = new Consultation(newData);
     newConsultation.populate("course teacher");
     await newConsultation.save();
 
     res.status(201).json(newConsultation);
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -106,7 +109,7 @@ export const updateConsultation = async (req, res) => {
     if (!updatedData?.group || updatedData?.group === "newGroup")
       delete updatedData.group;
 
-    console.log(updatedData, "updated Data");
+
     let updatedConsultation = await Consultation.findByIdAndUpdate(
       id,
       updatedData,
@@ -123,13 +126,15 @@ export const updateConsultation = async (req, res) => {
       return res.status(404).json({ message: "Consultation not found" });
     }
 
-    if (
-      updatedConsultation.status === "sold" &&
-      !updatedConsultation?.studentId
-    ) {
+    const existingStudent = await Student.findOne({
+      fin: updatedConsultation.fin,
+    }).session(session);
+
+    if (updatedConsultation.status === "sold" && !existingStudent) {
       const studentData = {
         fullName: updatedConsultation.studentName,
         courses: [updatedConsultation.course._id],
+        fin: updatedConsultation.fin,
       };
 
       const newStudent = new Student(studentData);

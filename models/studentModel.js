@@ -8,14 +8,15 @@ const studentSchema = new Schema(
       type: String,
       required: true,
     },
+    fin: {
+      type: String,
+      required: true,
+    },
     email: {
       type: String,
       unique: true,
     },
     password: {
-      type: String,
-    },
-    fin: {
       type: String,
     },
     seria: {
@@ -176,6 +177,20 @@ const studentSchema = new Schema(
   },
   { timestamps: true }
 );
+
+studentSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+  if (update.fin) {
+    update.fin = update.fin.toUpperCase();
+  }
+  next();
+});
+studentSchema.pre("save", function (next) {
+  if (this.fin) {
+    this.fin = this.fin.toUpperCase();
+  }
+  next();
+});
 
 studentSchema.index({ createdAt: 1 });
 
