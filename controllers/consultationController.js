@@ -81,8 +81,8 @@ export const createConsultation = async (req, res) => {
 
 // Update consultation
 export const updateConsultation = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // const session = await mongoose.startSession();
+  // session.startTransaction();
 
   const { id } = req.params;
   const { id: userId, role } = req.user;
@@ -109,26 +109,26 @@ export const updateConsultation = async (req, res) => {
     if (!updatedData?.group || updatedData?.group === "newGroup")
       delete updatedData.group;
 
-
     let updatedConsultation = await Consultation.findByIdAndUpdate(
       id,
       updatedData,
       {
         new: true,
         runValidators: true,
-        session: session,
+        // session: session,
       }
     ).populate("course teacher group");
 
     if (!updatedConsultation) {
-      await session.abortTransaction();
-      session.endSession();
+      // await session.abortTransaction();
+      // session.endSession();
       return res.status(404).json({ message: "Consultation not found" });
     }
 
     const existingStudent = await Student.findOne({
       fin: updatedConsultation.fin,
-    }).session(session);
+    });
+    // .session(session);
 
     if (updatedConsultation.status === "sold" && !existingStudent) {
       const studentData = {
@@ -138,14 +138,14 @@ export const updateConsultation = async (req, res) => {
       };
 
       const newStudent = new Student(studentData);
-      await newStudent.save({ session: session });
+      await newStudent.save(); //{ session: session }
 
       await Consultation.findByIdAndUpdate(
         updatedConsultation._id,
         {
           studentId: newStudent._id,
-        },
-        { session: session }
+        }
+        // { session: session }
       );
 
       let targetGroup;
@@ -158,13 +158,14 @@ export const updateConsultation = async (req, res) => {
           $expr: {
             $lt: [{ $size: "$students" }, 18],
           },
-        }).session(session);
+        });
+        // .session(session);
       }
 
       if (targetGroup) {
         targetGroup.students.push(newStudent._id);
 
-        await targetGroup.save({ session: session });
+        await targetGroup.save(); //{ session: session }
         await Student.findByIdAndUpdate(
           newStudent._id,
           {
@@ -173,15 +174,14 @@ export const updateConsultation = async (req, res) => {
                 group: targetGroup._id,
               },
             },
-          },
-          { session: session }
+          }
+          // { session: session }
         );
       } else {
         const lastGroup = await Group.findOne({
           course: updatedConsultation.course,
-        })
-          .sort({ groupNumber: -1 })
-          .session(session);
+        }).sort({ groupNumber: -1 });
+        // .session(session);
 
         let newGroupName = "";
 
@@ -203,7 +203,7 @@ export const updateConsultation = async (req, res) => {
           students: [newStudent._id],
         });
 
-        await newGroup.save({ session: session });
+        await newGroup.save(); //{ session: session }
 
         await Student.findByIdAndUpdate(
           newStudent._id,
@@ -213,8 +213,8 @@ export const updateConsultation = async (req, res) => {
                 group: newGroup._id,
               },
             },
-          },
-          { session: session }
+          }
+          // { session: session }
         );
 
         updatedConsultation = await Consultation.findByIdAndUpdate(
@@ -223,20 +223,20 @@ export const updateConsultation = async (req, res) => {
           {
             new: true,
             runValidators: true,
-            session: session,
+            // session: session,
           }
         ).populate("course teacher group");
       }
     }
 
-    await session.commitTransaction();
-    session.endSession();
+    // await session.commitTransaction();
+    // session.endSession();
 
     res.status(200).json(updatedConsultation);
   } catch (err) {
     console.log(err, "main error", err.message);
-    await session.abortTransaction();
-    session.endSession();
+    // await session.abortTransaction();
+    // session.endSession();
     res.status(500).json({ message: { error: err.message } });
   }
 };
