@@ -90,7 +90,8 @@ export const updateConsultation = async (req, res) => {
 
   try {
     if (role === "worker") {
-      const worker = await Worker.findById(userId).session(session);
+      const worker = await Worker.findById(userId);
+      // .session(session);
 
       const power = worker.profiles.find(
         (item) => item.profile === "consultation"
@@ -100,7 +101,8 @@ export const updateConsultation = async (req, res) => {
         delete updatedData.changes;
 
         const payload = new Consultation(updatedData);
-        await payload.populate("course teacher").session(session);
+        await payload.populate("course teacher");
+        // .session(session);
 
         updatedData = { changes: payload.toObject() };
       }
