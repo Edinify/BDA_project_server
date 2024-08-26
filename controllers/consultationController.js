@@ -30,6 +30,7 @@ export const getConsultationsForPagination = async (req, res) => {
 
     if (startDate && endDate) {
       const targetDate = calcDate(null, startDate, endDate);
+      console.log(targetDate, 'target date in consultation')
       filterObj.contactDate = {
         $gte: targetDate.startDate,
         $lte: targetDate.endDate,
