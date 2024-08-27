@@ -1,54 +1,101 @@
+import moment from "moment-timezone";
+
 export const calcDate = (monthCount, start, end) => {
   console.log(start, end, "from front");
+  const timeZone = "Asia/Baku";
 
   if (monthCount) {
     monthCount = Number(monthCount);
-    const startDate = new Date();
-    const endDate = new Date();
 
-    startDate.setMonth(startDate.getMonth() - (monthCount - 1));
-    startDate.setDate(1);
-    startDate.setHours(0, 0, 0, 0);
+    const startDate = moment
+      .tz(timeZone)
+      .subtract(monthCount - 1, "months")
+      .startOf("month")
+      .hours(0)
+      .minutes(0)
+      .seconds(0)
+      .milliseconds(0);
 
-    endDate.setMonth(endDate.getMonth() + 1);
-    endDate.setDate(0);
-    endDate.setHours(23, 59, 59, 999);
+    // Azərbaycan vaxtında bitiş tarixi hesabla
+    const endDate = moment
+      .tz(timeZone)
+      .add(0, "months")
+      .endOf("month")
+      .hours(23)
+      .minutes(59)
+      .seconds(59)
+      .milliseconds(999);
 
-    return { startDate, endDate };
+    return {
+      startDate: startDate.toDate(),
+      endDate: endDate.toDate(),
+    };
   } else if (start && end) {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
+    const startDateISO = new Date(start).toISOString();
+    const endDateISO = new Date(end).toISOString();
 
-    console.log(start, end, "start and end");
+    const startDate = moment
+      .tz(startDateISO, timeZone)
+      .startOf("day")
+      .hours(0)
+      .minutes(0)
+      .seconds(0)
+      .milliseconds(0);
+    const endDate = moment
+      .tz(endDateISO, timeZone)
+      .endOf("day")
+      .hours(23)
+      .minutes(59)
+      .seconds(59)
+      .milliseconds(999);
 
-    console.log(startDate, "start date");
-    console.log(endDate, "end date");
-
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-
-    return { startDate, endDate };
+    return {
+      startDate: startDate.toDate(),
+      endDate: endDate.toDate(),
+    };
   }
 };
 
 export const calcDateWithMonthly = (start, end) => {
+  const timeZone = "Asia/Baku"; // Azərbaycan vaxt qurşağı
+
   let startDate;
   let endDate;
 
   if (start && end) {
-    startDate = new Date(start);
-    endDate = new Date(end);
+    startDate = moment
+      .tz(start, timeZone)
+      .startOf("month")
+      .hours(0)
+      .minutes(0)
+      .seconds(0)
+      .milliseconds(0);
+    endDate = moment
+      .tz(end, timeZone)
+      .endOf("month")
+      .hours(23)
+      .minutes(59)
+      .seconds(59)
+      .milliseconds(999);
   } else {
-    startDate = new Date();
-    endDate = new Date();
+    startDate = moment
+      .tz(timeZone)
+      .startOf("month")
+      .hours(0)
+      .minutes(0)
+      .seconds(0)
+      .milliseconds(0);
+    endDate = moment
+      .tz(timeZone)
+      .endOf("month")
+      .hours(23)
+      .minutes(59)
+      .seconds(59)
+      .milliseconds(999);
   }
 
-  startDate.setDate(1);
-  endDate.setMonth(endDate.getMonth() + 1);
-  endDate.setDate(0);
-
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(23, 59, 59, 999);
-
-  return { startDate, endDate };
+  return {
+    startDate: startDate.toDate(),
+    endDate: endDate.toDate(),
+  };
 };

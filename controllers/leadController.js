@@ -15,6 +15,7 @@ export const getLeadsForPagination = async (req, res) => {
       targetDate = calcDateWithMonthly(startDate, endDate);
     }
 
+    console.log(targetDate, "target date in getLeads");
     const leads = await Lead.find({
       date: {
         $gte: targetDate.startDate,

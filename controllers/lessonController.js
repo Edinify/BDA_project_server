@@ -176,6 +176,7 @@ export const getLessons = async (req, res) => {
 
     if (startDate && endDate) {
       const targetDate = calcDate(null, startDate, endDate);
+      
       filterObj.date = {
         $gte: targetDate.startDate,
         $lte: targetDate.endDate,
