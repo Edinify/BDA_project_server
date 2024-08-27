@@ -1,12 +1,10 @@
 export const calcDate = (monthCount, start, end) => {
-  const AZERBAIJAN_TIME_OFFSET = 4 * 60 * 60 * 1000;
+  console.log(start, end, "from front");
+
   if (monthCount) {
     monthCount = Number(monthCount);
     const startDate = new Date();
     const endDate = new Date();
-
-    startDate.setTime(startDate.getTime() + AZERBAIJAN_TIME_OFFSET);
-    endDate.setTime(endDate.getTime() + AZERBAIJAN_TIME_OFFSET);
 
     startDate.setMonth(startDate.getMonth() - (monthCount - 1));
     startDate.setDate(1);
@@ -21,11 +19,10 @@ export const calcDate = (monthCount, start, end) => {
     const startDate = new Date(start);
     const endDate = new Date(end);
 
-    startDate.setTime(startDate.getTime() + AZERBAIJAN_TIME_OFFSET);
-    endDate.setTime(endDate.getTime() + AZERBAIJAN_TIME_OFFSET);
+    console.log(start, end, "start and end");
 
-    console.log(startDate);
-    console.log(endDate);
+    console.log(startDate, "start date");
+    console.log(endDate, "end date");
 
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
