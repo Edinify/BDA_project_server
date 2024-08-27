@@ -103,6 +103,7 @@ export const getLatePayment = async (req, res) => {
 
   if (!allDate && (monthCount || startDate || endDate)) {
     targetDate = calcDate(monthCount, startDate, endDate);
+    console.log(targetDate, "target date in tuition fee");
 
     if (targetDate.endDate > endOfDay) {
       targetDate.endDate = endOfDay;
