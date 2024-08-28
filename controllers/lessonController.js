@@ -62,37 +62,6 @@ export const createLessons = async (group) => {
     )
       return true;
 
-    const freeDays = [
-      {
-        month: 1,
-        day: 1,
-      },
-      {
-        month: 1,
-        day: 2,
-      },
-      {
-        month: 1,
-        day: 3,
-      },
-      {
-        month: 1,
-        day: 4,
-      },
-      {
-        month: 3,
-        day: 20,
-      },
-      {
-        month: 3,
-        day: 21,
-      },
-      {
-        month: 12,
-        day: 31,
-      },
-    ];
-
     const checkLessons = await Lesson.findOne({ group: _id });
 
     if (checkLessons) return true;
@@ -103,19 +72,21 @@ export const createLessons = async (group) => {
     let syllabusIndex = 0;
     const lessons = [];
 
-    while (startDate <= endDate) {
-      const currentDay = startDate.getDay() > 0 ? startDate.getDay() : 7;
-      const currentMonthDay = startDate.getDate();
-      const currentMonth = startDate.getMonth() + 1;
+    let currentStartDate = moment
+      .tz(startDate, "UTC")
+      .tz("Asia/Baku")
+      .startOf("day");
+    const endMoment = moment.tz(endDate, "UTC").tz("Asia/Baku").endOf("day");
 
-      const checkFriday = freeDays.find(
-        (item) => item.month === currentMonth && item.day === currentMonthDay
-      );
+    while (currentStartDate.isSameOrBefore(endMoment)) {
+      // const currentDay = startDate.getDay() > 0 ? startDate.getDay() : 7;
+      const currentDay =
+        currentStartDate.day() > 0 ? currentStartDate.day() : 7;
       const checkDay = lessonDate?.find((item) => item.day === currentDay);
 
-      if (checkDay && !checkFriday) {
+      if (checkDay) {
         // const currentDate = new Date(startDate);
-        const currentDate = moment.tz(startDate, "Asia/Baku").toDate();
+        const currentDate = currentStartDate.toDate();
         const studentsObj = students.map((student) => ({
           student,
         }));
@@ -155,7 +126,8 @@ export const createLessons = async (group) => {
         lessons.push(newLesson);
       }
 
-      startDate.setDate(startDate.getDate() + 1);
+      // startDate.setDate(startDate.getDate() + 1);
+      currentStartDate.add(1, "day");
     }
 
     const result = await Lesson.insertMany(lessons);
