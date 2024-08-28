@@ -115,7 +115,7 @@ export const createLessons = async (group) => {
 
       if (checkDay && !checkFriday) {
         // const currentDate = new Date(startDate);
-        const currentDate = moment(startDate).tz("Asia/Baku").toDate();
+        const currentDate = moment.tz(startDate, "Asia/Baku").toDate();
         const studentsObj = students.map((student) => ({
           student,
         }));
