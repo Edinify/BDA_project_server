@@ -4,6 +4,7 @@ import { calcDate } from "../calculate/calculateDate.js";
 import { Syllabus } from "../models/syllabusModel.js";
 import { Worker } from "../models/workerModel.js";
 import { Student } from "../models/studentModel.js";
+import moment from "moment-timezone";
 
 // Create lesson
 export const createLesson = async (req, res) => {
@@ -113,7 +114,8 @@ export const createLessons = async (group) => {
       const checkDay = lessonDate?.find((item) => item.day === currentDay);
 
       if (checkDay && !checkFriday) {
-        const currentDate = new Date(startDate);
+        // const currentDate = new Date(startDate);
+        const currentDate = moment(startDate).tz("Asia/Baku").toDate();
         const studentsObj = students.map((student) => ({
           student,
         }));
@@ -176,7 +178,7 @@ export const getLessons = async (req, res) => {
 
     if (startDate && endDate) {
       const targetDate = calcDate(null, startDate, endDate);
-      
+
       filterObj.date = {
         $gte: targetDate.startDate,
         $lte: targetDate.endDate,
@@ -314,7 +316,8 @@ export const updateLesson = async (req, res) => {
 
   try {
     if (date) {
-      const day = new Date(date).getDay();
+      // const day = new Date(date).getDay();
+      const day = moment.tz(date, "Asia/Baku").day();
       updatedData.day = day == 0 ? 7 : day;
     }
 
