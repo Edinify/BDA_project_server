@@ -120,6 +120,7 @@ const connectToDatabase = async (uri, port) => {
 
     const server = app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
+
     });
 
     const io = new Server(server, {
