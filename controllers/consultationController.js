@@ -16,6 +16,7 @@ export const getConsultationsForPagination = async (req, res) => {
     endDate,
     whereComing,
     courseId,
+    phone,
   } = req.query;
   const limit = 20;
 
@@ -30,7 +31,7 @@ export const getConsultationsForPagination = async (req, res) => {
 
     if (startDate && endDate) {
       const targetDate = calcDate(null, startDate, endDate);
-      console.log(targetDate, 'target date in consultation')
+      console.log(targetDate, "target date in consultation");
       filterObj.contactDate = {
         $gte: targetDate.startDate,
         $lte: targetDate.endDate,
@@ -48,6 +49,10 @@ export const getConsultationsForPagination = async (req, res) => {
     if (searchQuery && searchQuery.trim() !== "") {
       const regexSearchQuery = new RegExp(searchQuery, "i");
       filterObj.studentName = { $regex: regexSearchQuery };
+    }
+    if (phone && phone.trim() !== "") {
+      const regexSearchQuery = new RegExp(phone, "i");
+      filterObj.studentPhone = { $regex: regexSearchQuery };
     }
 
     const consultationsCount = await Consultation.countDocuments(filterObj);
