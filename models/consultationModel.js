@@ -48,9 +48,6 @@ const consultationSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Group",
     },
-    persona: {
-      type: String,
-    },
     whereComing: {
       type: String,
       default: "other",
