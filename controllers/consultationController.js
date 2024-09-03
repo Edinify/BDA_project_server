@@ -320,7 +320,7 @@ export const exportConsultationsExcel = async (req, res) => {
     whereComing,
   } = req.query;
 
-  console.log(req.query)
+  console.log(req.query);
 
   const whereComingList = [
     { name: "İnstagram Sponsorlu", key: "instagramSponsor" },
@@ -389,7 +389,7 @@ export const exportConsultationsExcel = async (req, res) => {
     }
     const consultations = await Consultation.find(filterObj)
       .populate("course group teacher")
-      .sort({ createdAt: -1 });
+      .sort({ contactDate: -1 });
 
     const workbook = new exceljs.Workbook();
 
