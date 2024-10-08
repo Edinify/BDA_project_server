@@ -53,7 +53,7 @@ export const getConsultationsForPagination = async (req, res) => {
       filterObj.studentName = { $regex: regexSearchQuery };
     }
     if (phone && phone.trim() !== "") {
-      const regexSearchQuery = new RegExp(phone, "i");
+      const regexSearchQuery = new RegExp(phone.replace(/\s+/g, ""), "i");
       filterObj.studentPhone = { $regex: regexSearchQuery };
     }
 
