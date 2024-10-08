@@ -46,7 +46,7 @@ import { Student } from "./models/studentModel.js";
 import { Worker } from "./models/workerModel.js";
 
 dotenv.config();
-
+// sds
 const app = express();
 const port = process.env.PORT;
 const uri = process.env.DB_URI;
