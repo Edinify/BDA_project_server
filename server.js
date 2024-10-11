@@ -121,14 +121,6 @@ const connectToDatabase = async (uri, port) => {
     const server = app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
 
-      // if (false) {
-      //   const group = await Group.findById("66ced98aaffbafca651cc674");
-      //   const lessons = await Lesson.deleteMany({
-      //     group: "66ced98aaffbafca651cc674",
-      //   });
-      //   console.log(lessons);
-      //   console.log(lessons.length);
-      // }
     });
 
     const io = new Server(server, {

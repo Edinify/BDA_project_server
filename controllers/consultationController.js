@@ -53,10 +53,16 @@ export const getConsultationsForPagination = async (req, res) => {
       filterObj.studentName = { $regex: regexSearchQuery };
     }
     if (phone && phone.trim() !== "") {
-      const regexSearchQuery = new RegExp(phone.replace(/\s+/g, ""), "i");
-      filterObj.studentPhone = { $regex: regexSearchQuery };
+      const formattedPhone = phone.replace(/\s+/g, "");
+
+      const phoneRegex = new RegExp(formattedPhone.split("").join("\\s*"), "i");
+
+      filterObj.studentPhone = {
+        $regex: phoneRegex,
+      };
     }
 
+    console.log(filterObj);
     const consultationsCount = await Consultation.countDocuments(filterObj);
     totalLength = consultationsCount;
     consultations = await Consultation.find(filterObj)
