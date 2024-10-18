@@ -103,39 +103,30 @@ app.get("/", (req, res) => {
 const connectToDatabase = async (uri, port) => {
   let connected = false;
   let attempts = 0;
-
-  while (!connected && attempts < 5) {
-    // Можете изменить количество попыток по вашему усмотрению
     try {
-      await mongoose.connect(uri);
+      await mongoose.connect(
+        `mongodb://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@mongodb:27017/course-bda?authSource=admin`,
+        {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+        }
+      );
+      console.log('CONNECTED TO MONGODB!!');
       connected = true;
     } catch (err) {
-      attempts++;
-      console.error(
-        `Connection to database failed (attempt ${attempts}): ${err.message}`
-      );
-      // Подождем некоторое время перед следующей попыткой (например, 5 секунд)
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.error('FAILED TO CONNECT TO MONGODB');
+      console.error(err);
     }
-  }
 
   if (connected) {
     console.log("Connected to the database");
-
     const server = app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
 
-      // if (false) {
-      //   const group = await Group.findById("66ced98aaffbafca651cc674");
-      //   const lessons = await Lesson.deleteMany({
-      //     group: "66ced98aaffbafca651cc674",
-      //   });
-      //   console.log(lessons);
-      //   console.log(lessons.length);
-      // }
+      // await Course.updateMany({ deleted: true }, { deleted: false });
     });
-
     const io = new Server(server, {
+      // transports: ["websocket"],
       cors: {
         origin: process.env.URL_PORT,
         credentials: true,
@@ -178,6 +169,5 @@ const connectToDatabase = async (uri, port) => {
   }
 };
 
-// sdsd
-
 connectToDatabase(uri, port);
+
