@@ -63,8 +63,8 @@ export const login = async (req, res) => {
 
     const user = admin || worker || teacher || student;
 
-    if (!user || user) {
-      return res.status(404).json({ key: user });
+    if (!user) {
+      return res.status(404).json({ key: "user-not" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
