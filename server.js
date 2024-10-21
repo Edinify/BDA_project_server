@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+import { Admin } from "./models/adminModel.js";
+
 import studentRoutes from "./routes/studentRoutes.js";
 import teacherRoutes from "./routes/teacherRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -49,7 +51,6 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
-const uri = process.env.DB_URI;
 console.log("start run");
 
 
@@ -100,7 +101,7 @@ app.get("/", (req, res) => {
   res.send("hello");
 });
 
-const connectToDatabase = async (uri, port) => {
+const connectToDatabase = async (port) => {
   let connected = false;
   let attempts = 0;
     try {
@@ -111,6 +112,8 @@ const connectToDatabase = async (uri, port) => {
           useUnifiedTopology: true,
         }
       );
+      const existingAdmin = await Admin.find();
+      console.log(existingAdmin)
       console.log('CONNECTED TO MONGODB!!');
       connected = true;
     } catch (err) {
