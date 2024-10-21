@@ -64,7 +64,7 @@ export const login = async (req, res) => {
     const user = admin || worker || teacher || student;
 
     if (!user) {
-      return res.status(404).json({ key: "user-not" });
+      return res.status(404).json({ message: { error: `user not found. ${user}` } });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
