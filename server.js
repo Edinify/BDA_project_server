@@ -115,6 +115,7 @@ const connectToDatabase = async (port) => {
       const existingAdmin = await Admin.find();
       console.log(existingAdmin)
       console.log('CONNECTED TO MONGODB!!');
+      console.log(process.env.MONGODB_USERNAME,process.env.MONGODB_PASSWORD)
       connected = true;
     } catch (err) {
       console.error('FAILED TO CONNECT TO MONGODB');
