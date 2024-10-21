@@ -43,7 +43,6 @@ import { Group } from "./models/groupModel.js";
 import { group, time } from "console";
 import { Lesson } from "./models/lessonModel.js";
 import { Room } from "./models/roomModel.js";
-import { Admin } from "./models/adminModel.js";
 import { Student } from "./models/studentModel.js";
 import { Worker } from "./models/workerModel.js";
 
