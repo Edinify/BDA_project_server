@@ -172,5 +172,5 @@ const connectToDatabase = async (port) => {
   }
 };
 
-connectToDatabase(uri, port);
+connectToDatabase(port);
 
