@@ -51,11 +51,12 @@ export const registerSuperAdmin = async (req, res) => {
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
+  console.log(email, password )
   try {
     const regexEmail = new RegExp(email, "i");
 
     const admin = await Admin.findOne({ email: { $regex: regexEmail } });
+    console.log(admin)
     const worker = await Worker.findOne({ email: { $regex: regexEmail } });
     const teacher = await Teacher.findOne({ email: { $regex: regexEmail } });
     const student = await Student.findOne({ email: { $regex: regexEmail } });
