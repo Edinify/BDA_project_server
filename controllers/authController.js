@@ -64,7 +64,7 @@ export const login = async (req, res) => {
     const user = admin || worker || teacher || student;
 
     if (!user) {
-      return res.status(404).json({ message: { error: `user not found. ${user}` } });
+      return res.status(404).json({ message: { error: `user test test` } });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -355,7 +355,7 @@ export const getUser = async (req, res) => {
     }
 
     if (!user) {
-      return res.status(404).json({ message: "not found user" });
+      return res.status(404).json({ message: "user test test " });
     }
 
     const userObj = user.toObject();
