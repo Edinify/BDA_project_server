@@ -44,11 +44,6 @@ const lessonSchema = new Schema(
             type: Number,
             default: 0,
           },
-          studentSignature: {
-            type: Number,
-            default: 0,
-            enum: [-1, 0, 1],
-          },
         },
       ],
       required: true,

@@ -140,7 +140,7 @@ export const createLessons = async (group) => {
 };
 
 export const getLessons = async (req, res) => {
-  const { length, groupId, startDate, endDate, status } = req.query;
+  const { length, groupId, startDate, endDate, status, teacherId } = req.query;
   const limit = 20;
 
   try {
@@ -165,6 +165,8 @@ export const getLessons = async (req, res) => {
       filterObj.status = status;
     }
 
+    if (teacherId) filterObj.teacher = teacherId;
+
     const confirmedCount = await Lesson.countDocuments({
       group: groupId,
       status: "confirmed",
@@ -176,6 +178,10 @@ export const getLessons = async (req, res) => {
     const unviewedCount = await Lesson.countDocuments({
       group: groupId,
       status: "unviewed",
+    });
+
+    const totalLength = await Lesson.countDocuments({
+      ...filterObj,
     });
 
     const skip = length || 0;
@@ -199,6 +205,7 @@ export const getLessons = async (req, res) => {
       confirmedCount,
       cancelledCount,
       unviewedCount,
+      totalLength,
     });
   } catch (err) {
     console.log(err, "lesson error");

@@ -121,6 +121,25 @@ const connectToDatabase = async (uri, port) => {
     const server = app.listen(port, async () => {
       console.log(`Server is listening at port ${port}`);
 
+      // const targetGroup = await Group.findOne({ name: "" });
+
+      // console.log(targetGroup);
+
+      // const lessons = await Lesson.find({ group: targetGroup._id });
+
+      // if (false) {
+      //   for (const lesson of lessons) {
+      //     console.log(lesson.date);
+
+      //     lesson.date.setDate(lesson.date.getDate() - 1);
+
+      //     console.log(lesson.date);
+      //     console.log("================================");
+
+      //     await Lesson.findByIdAndUpdate(lesson._id, { date: lesson.date });
+      //   }
+      // }
+      // console.log(lessons.length);
     });
 
     const io = new Server(server, {
