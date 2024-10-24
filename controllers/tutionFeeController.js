@@ -406,9 +406,10 @@ export const getToBePayment = async (req, res) => {
 
 // get tution fees
 export const getTutionFees = async (req, res) => {
-  const { searchQuery, groupId, courseId, paymentStatus, length } = req.query;
+  const { searchQuery, groupsIds, courseId, paymentStatus, length } = req.query;
   const limit = 20;
 
+  console.log(req.query);
   try {
     const regexSearchQuery = new RegExp(searchQuery?.trim() || "", "i");
     const filterObj = {
@@ -421,9 +422,11 @@ export const getTutionFees = async (req, res) => {
       filterObj._id = { $in: payingStudentsIds };
     }
 
-    if (groupId) filterObj["groups.group"] = groupId;
+    if (groupsIds) filterObj["groups.group"] = { $in: groupsIds.split(",") };
 
     if (courseId) filterObj.courses = courseId;
+
+    console.log(filterObj, "jjjjj");
 
     const students = await Student.find({
       fullName: { $regex: regexSearchQuery },
